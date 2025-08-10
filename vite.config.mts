@@ -22,9 +22,13 @@ export default defineConfig({
       },
     },
     target: 'es2015',
+    sourcemap: false,
   },
   server: {
     port: 3000,
     host: true,
   },
+  define: {
+    'process.env': {}
+  }
 })

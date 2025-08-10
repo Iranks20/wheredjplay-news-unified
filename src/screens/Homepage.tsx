@@ -1,20 +1,27 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { 
-  Headphones, 
-  Zap, 
-  Star, 
-  ArrowRight,
-  Calendar,
-  User,
+  Search, 
+  Filter, 
+  Calendar, 
+  Clock, 
+  User, 
   Eye,
+  Headphones,
+  Zap,
+  Star,
+  ArrowRight,
   FileText
 } from 'lucide-react';
-import * as Components from '../components';
-import { useApi } from '../hooks/useApi';
 import { ArticlesService, CategoriesService } from '../lib/api';
+import { useApi, useApiWithPagination } from '../hooks/useApi';
+import NewsCard from '../components/NewsCard';
+import DJLinkAd from '../components/DJLinkAd';
+import NewsletterModal from '../components/NewsletterModal';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 export default function Homepage() {
   const { category } = useParams();
@@ -71,7 +78,7 @@ export default function Homepage() {
           </div>
         </div>
 
-        <Components.Header />
+        <Header />
 
         <main className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
           <div className="animate-pulse space-y-6">
@@ -109,7 +116,7 @@ export default function Homepage() {
       </div>
 
       {/* Header */}
-      <Components.Header />
+      <Header />
 
       {/* Main Content */}
       <main className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
@@ -207,7 +214,7 @@ export default function Homepage() {
                   </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {articles.slice(0, 3).map((article: any) => (
-                <Components.NewsCard
+                <NewsCard
                   key={article.id}
                   id={article.id.toString()}
                   title={article.title}
@@ -239,7 +246,7 @@ export default function Homepage() {
           {articles.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {articles.map((article: any) => (
-                <Components.NewsCard
+                <NewsCard
                   key={article.id}
                   id={article.id.toString()}
                   title={article.title}
@@ -300,11 +307,11 @@ export default function Homepage() {
       </main>
 
       {/* Footer */}
-      <Components.Footer />
+      <Footer />
 
       {/* Newsletter Modal */}
       {showNewsletterModal && (
-      <Components.NewsletterModal
+      <NewsletterModal
         isOpen={showNewsletterModal}
         onClose={() => setShowNewsletterModal(false)}
       />

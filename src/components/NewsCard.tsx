@@ -2,7 +2,7 @@
 
 import { Clock, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import Image from './ui/Image'
+import { ImageUploadService } from '../lib/uploadService'
 
 interface NewsCardProps {
   id: string
@@ -42,15 +42,46 @@ export default function NewsCard({
     return categoryColors[cat as keyof typeof categoryColors] || 'bg-wdp-accent/20 text-wdp-accent'
   }
 
+  // Get the proper image URL using the ImageUploadService
+  const imageUrl = ImageUploadService.getImageUrlWithFallback(image);
+
+  // Debug logging
+  console.log('NewsCard - Original image:', image);
+  console.log('NewsCard - Processed imageUrl:', imageUrl);
+
+  // Test image accessibility (only in development)
+  if (import.meta.env.DEV) {
+    // Test the image URL manually
+    fetch(imageUrl, { method: 'HEAD' })
+      .then(response => {
+        console.log('🔍 Image accessibility test:', imageUrl, 'Status:', response.status, 'OK:', response.ok);
+        if (!response.ok) {
+          console.error('❌ Image not accessible:', imageUrl, 'Status:', response.status);
+        }
+      })
+      .catch(error => {
+        console.error('❌ Image accessibility test failed:', imageUrl, error);
+      });
+  }
+
   if (featured) {
     return (
       <Link to={`/article/${id}`} className={`group block ${className}`}>
         <article className="bg-white dark:bg-wdp-surface rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 dark:border-wdp-muted">
           <div className="relative h-64 sm:h-80 overflow-hidden">
-            <Image
-              src={image}
+            <img
+              src={imageUrl}
               alt={title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                console.error('Image failed to load:', image);
+                console.error('Image URL:', imageUrl);
+                console.error('Error event:', e);
+                e.currentTarget.src = 'https://via.placeholder.com/800x400/e5e7eb/6b7280?text=Image+Not+Found';
+              }}
+              onLoad={() => {
+                console.log('Image loaded successfully:', imageUrl);
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             <div className="absolute bottom-4 left-4 right-4">
@@ -89,10 +120,19 @@ export default function NewsCard({
     <Link to={`/article/${id}`} className={`group block ${className}`}>
       <article className="bg-white dark:bg-wdp-surface rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 dark:border-wdp-muted">
         <div className="relative h-48 overflow-hidden">
-          <Image
-            src={image}
+          <img
+            src={imageUrl}
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              console.error('Image failed to load:', image);
+              console.error('Image URL:', imageUrl);
+              console.error('Error event:', e);
+              e.currentTarget.src = 'https://via.placeholder.com/800x400/e5e7eb/6b7280?text=Image+Not+Found';
+            }}
+            onLoad={() => {
+              console.log('Image loaded successfully:', imageUrl);
+            }}
           />
           <span className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-semibold ${getCategoryColor(category)}`}>
             {category}

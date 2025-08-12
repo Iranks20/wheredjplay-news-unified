@@ -39,6 +39,8 @@ export default function ArticleEditor() {
   const [showPreview, setShowPreview] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
 
   // Categories and users state
   const [categories, setCategories] = useState<any[]>([]);
@@ -113,6 +115,15 @@ export default function ArticleEditor() {
     }
   }, [isEditing, id])
 
+  // Cleanup object URLs on unmount or when preview changes
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -124,13 +135,38 @@ export default function ArticleEditor() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setError('Image file size must be less than 5MB');
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file');
+      return;
+    }
+
+    // Show preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    // Revoke previous preview URL if it exists
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImagePreview(previewUrl);
+
     setImageUploading(true);
     setError(null);
+    setUploadSuccess(false);
 
     try {
       console.log('Starting image upload:', file.name, file.size, file.type);
+      console.log('API URL:', import.meta.env.VITE_API_URL || 'http://localhost:3001');
       
       const result = await ImageUploadService.uploadImage(file);
+
+      console.log('Upload result:', result);
 
       if (!result.success) {
         throw new Error(result.message || 'Error uploading image');
@@ -140,10 +176,28 @@ export default function ArticleEditor() {
       const imageUrl = result.data?.fullUrl || result.data?.url;
       console.log('Upload successful! Image URL:', imageUrl);
       
+      if (!imageUrl) {
+        throw new Error('No image URL returned from server');
+      }
+
       handleInputChange('image', imageUrl);
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+      }
+      
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000); // Hide success message after 3 seconds
+      
+      // Clear the file input
+      event.target.value = '';
     } catch (err: any) {
       console.error('Upload error:', err);
       setError('Error uploading image: ' + err.message);
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+      }
     } finally {
       setImageUploading(false);
     }
@@ -217,6 +271,22 @@ export default function ArticleEditor() {
               </h3>
               <div className="mt-2 text-sm text-red-700 dark:text-red-400">
                 {error}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Message */}
+      {uploadSuccess && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800 dark:text-green-300">
+                Success
+              </h3>
+              <div className="mt-2 text-sm text-green-700 dark:text-green-400">
+                Image uploaded successfully!
               </div>
             </div>
           </div>
@@ -297,19 +367,41 @@ export default function ArticleEditor() {
               Featured Image
             </label>
             <div className="space-y-4">
-              {formData.image ? (
+              {formData.image || imagePreview ? (
                 <div className="relative">
                   <img
-                    src={formData.image}
+                    src={imagePreview || formData.image}
                     alt="Featured"
                     className="w-full h-64 object-cover rounded-lg"
+                    onError={(e) => {
+                      console.error('Image failed to load:', imagePreview || formData.image);
+                      // Set a fallback image
+                      e.currentTarget.src = 'https://via.placeholder.com/800x400/e5e7eb/6b7280?text=Image+Not+Found';
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully:', imagePreview || formData.image);
+                    }}
                   />
                   <button
-                    onClick={() => handleInputChange('image', '')}
+                    onClick={() => {
+                      handleInputChange('image', '');
+                      if (imagePreview) {
+                        URL.revokeObjectURL(imagePreview);
+                        setImagePreview(null);
+                      }
+                    }}
                     className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                   >
                     <X size={16} />
                   </button>
+                  {imagePreview && imageUploading && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                      <div className="text-white text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                        <p>Uploading...</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
@@ -321,14 +413,32 @@ export default function ArticleEditor() {
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="hidden"
+                      disabled={imageUploading}
                     />
-                    <span className="inline-flex items-center space-x-2 px-4 py-2 bg-admin-accent text-white rounded-lg hover:bg-admin-accent-hover transition-colors">
-                      <Upload size={16} />
-                      <span>Choose Image</span>
+                    <span className={`inline-flex items-center space-x-2 px-4 py-2 bg-admin-accent text-white rounded-lg transition-colors ${imageUploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-admin-accent-hover cursor-pointer'}`}>
+                      {imageUploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={16} />
+                          <span>Choose Image</span>
+                        </>
+                      )}
                     </span>
                   </label>
+                  {imageUploading && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      Please wait while your image is being uploaded...
+                    </p>
+                  )}
                 </div>
               )}
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Upload a featured image for your article. Recommended size: 1200x630px. Max file size: 5MB.
+              </p>
             </div>
           </div>
 
@@ -496,53 +606,7 @@ export default function ArticleEditor() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Featured Image
-                </label>
-                <div className="space-y-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-admin-accent file:text-white hover:file:bg-admin-accent-hover"
-                  />
-                  {imageUploading && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-admin-accent"></div>
-                      <span>Uploading image...</span>
-                    </div>
-                  )}
-                  {formData.image && (
-                    <div className="relative">
-                      <img
-                        src={formData.image}
-                        alt="Article preview"
-                        className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                        onError={() => {
-                          console.error('Image failed to load:', formData.image);
-                          console.error('Constructed URL:', ImageUploadService.getImageUrl(formData.image));
-                        }}
-                        onLoad={() => {
-                          console.log('Image loaded successfully:', formData.image);
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleInputChange('image', '')}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Upload a featured image for your article. Recommended size: 1200x630px
-                  </p>
-                </div>
-              </div>
+
             </div>
           </div>
 

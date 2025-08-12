@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
+  VITE_API_URL = "http://13.60.95.22:3001"
 
 [[headers]]
   for = "*.js"

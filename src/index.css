@@ -24,6 +24,14 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    
+    /* WhereDJsPlay custom colors */
+    --wdp-background: 0 0% 98%;
+    --wdp-surface: 0 0% 100%;
+    --wdp-muted: 210 40% 96%;
+    --wdp-text: 222.2 84% 4.9%;
+    --wdp-accent: 187 100% 42%;
+    --wdp-accent-hover: 187 100% 38%;
   }
 
   .dark {
@@ -46,6 +54,14 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 94.1%;
+    
+    /* WhereDJsPlay custom colors - dark mode */
+    --wdp-background: 222.2 84% 4.9%;
+    --wdp-surface: 217.2 32.6% 17.5%;
+    --wdp-muted: 217.2 32.6% 17.5%;
+    --wdp-text: 210 40% 98%;
+    --wdp-accent: 187 100% 42%;
+    --wdp-accent-hover: 187 100% 38%;
   }
 }
 

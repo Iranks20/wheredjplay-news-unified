@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Plus, 
   Edit, 
@@ -17,10 +17,26 @@ import { CategoriesService } from '../lib/api';
 export default function Categories() {
   const { data: categories, loading, error, execute } = useApi();
   const [showDeleteModal, setShowDeleteModal] = useState<number | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     execute(() => CategoriesService.getCategories());
   }, [execute]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleDelete = async (categoryId: number) => {
     try {
@@ -31,6 +47,14 @@ export default function Categories() {
     } catch (error: any) {
       alert(error.message || 'Error deleting category');
     }
+  };
+
+  const toggleDropdown = (categoryId: number) => {
+    setOpenDropdown(openDropdown === categoryId ? null : categoryId);
+  };
+
+  const closeDropdown = () => {
+    setOpenDropdown(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -147,27 +171,36 @@ export default function Categories() {
                 </div>
 
                 {/* Actions */}
-                <div className="relative">
-                  <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <div className="relative" ref={dropdownRef}>
+                  <button 
+                    onClick={() => toggleDropdown(category.id)}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
                     <MoreVertical size={16} className="text-gray-400" />
                   </button>
-                  <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
-                    <Link
-                      to={`/admin/categories/edit/${category.id}`}
-                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      <Edit size={14} />
-                      <span>Edit</span>
-                    </Link>
-                    
-                    <button
-                      onClick={() => setShowDeleteModal(category.id)}
-                      className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 size={14} />
-                      <span>Delete</span>
-                    </button>
-                  </div>
+                  {openDropdown === category.id && (
+                    <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                      <Link
+                        to={`/admin/categories/edit/${category.id}`}
+                        onClick={closeDropdown}
+                        className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <Edit size={14} />
+                        <span>Edit</span>
+                      </Link>
+                      
+                      <button
+                        onClick={() => {
+                          setShowDeleteModal(category.id);
+                          closeDropdown();
+                        }}
+                        className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <Trash2 size={14} />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

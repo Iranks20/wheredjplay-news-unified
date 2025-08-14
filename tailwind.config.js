@@ -55,9 +55,14 @@ export default {
         },
         // Custom colors for WhereDJsPlay
         wdp: {
+          background: "hsl(var(--wdp-background) / <alpha-value>)",
+          surface: "hsl(var(--wdp-surface) / <alpha-value>)",
+          muted: "hsl(var(--wdp-muted) / <alpha-value>)",
+          text: "hsl(var(--wdp-text) / <alpha-value>)",
+          accent: "hsl(var(--wdp-accent) / <alpha-value>)",
+          "accent-hover": "hsl(var(--wdp-accent-hover) / <alpha-value>)",
           primary: "#6366f1",
           secondary: "#8b5cf6",
-          accent: "#06b6d4",
           dark: "#0f172a",
           light: "#f8fafc",
         },

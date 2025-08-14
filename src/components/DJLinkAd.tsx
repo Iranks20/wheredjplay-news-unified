@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { X, ExternalLink, Star, Users, Music } from 'lucide-react'
+import { getAssetPath } from '../lib/utils'
 
 interface DJLinkAdProps {
   format?: 'sidebar' | 'banner' | 'inline'
@@ -28,7 +29,7 @@ export default function DJLinkAd({ format = 'sidebar', className = '' }: DJLinkA
         <div className="flex items-center justify-between max-w-[1400px] mx-auto">
           <div className="flex items-center space-x-4">
             <img 
-              src="/images/ads/djlinkme_advert_banner.png" 
+              src={getAssetPath('images/ads/djlinkme_advert_banner.png')} 
               alt="DJLink.me" 
               className="h-12 w-auto"
             />

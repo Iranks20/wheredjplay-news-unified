@@ -14,7 +14,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
+      <Router basename="/wdjpnews">
         <div className="flex flex-col min-h-screen">
           <Routes>
             {/* Frontend Routes */}

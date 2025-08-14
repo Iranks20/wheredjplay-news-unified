@@ -1,4 +1,5 @@
 import React from 'react'
+import { getAssetPath } from '../lib/utils'
 
 export default function Footer() {
   return (
@@ -7,7 +8,7 @@ export default function Footer() {
         {/* Left: Logo and Description */}
         <div className="flex-1 min-w-[220px] flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <img src="/images/logos/wheredjsplay_logo.png" alt="WhereDJsPlay Logo" className="h-10 w-auto" />
+            <img src={getAssetPath('images/logos/wheredjsplay_logo.png')} alt="WhereDJsPlay Logo" className="h-10 w-auto" />
           </div>
           <p className="text-gray-600 dark:text-wdp-text/70 text-sm max-w-xs">
             Your ultimate source for DJ & electronic music news, events, and artist discovery. Powered by the global DJ community.
@@ -19,7 +20,7 @@ export default function Footer() {
               rel="noopener noreferrer" 
               className="inline-flex items-center justify-center h-12 w-48 rounded-lg bg-gray-800 dark:bg-gray-700 p-2 hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
             >
-              <img src="/images/logos/djlinkme_logo.svg" alt="DJLink.me Logo" className="h-10 w-auto" />
+              <img src={getAssetPath('images/logos/djlinkme_logo.svg')} alt="DJLink.me Logo" className="h-10 w-auto" />
             </a>
             <span className="text-xs text-gray-500 dark:text-wdp-text/50">A product of DJLink.me</span>
           </div>

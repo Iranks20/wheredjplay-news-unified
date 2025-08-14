@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Menu, X, Sun, Moon, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { getAssetPath } from '../lib/utils'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -44,7 +45,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="/images/logos/wheredjsplay_logo.png" 
+              src={getAssetPath('images/logos/wheredjsplay_logo.png')} 
               alt="WhereDJsPlay" 
               className="h-10 w-auto"
             />
@@ -83,15 +84,23 @@ export default function Header() {
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            {/* Submit News Button */}
+            {/* Post News Button */}
+            <Link
+              to="/admin"
+              className="hidden sm:flex items-center space-x-2 bg-wdp-accent text-white px-4 py-2 rounded-lg hover:bg-wdp-accent-hover transition-all duration-200 font-medium"
+            >
+              <Plus size={16} />
+              <span>Post News</span>
+            </Link>
+
+            {/* DJLink.me Button */}
             <a
               href="https://djlink.me/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center space-x-2 bg-wdp-accent text-white px-4 py-2 rounded-lg hover:bg-wdp-accent-hover transition-all duration-200 font-medium"
+              className="hidden sm:flex items-center space-x-2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
             >
-              <Plus size={16} />
-              <span>Join Djlinkme</span>
+              <span>Join DJLink.me</span>
             </a>
 
 
@@ -128,14 +137,20 @@ export default function Header() {
               <Link to="/category/industry-news" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent font-medium transition-colors">
                 Industry
               </Link>
+              <Link
+                to="/admin"
+                className="flex items-center space-x-2 bg-wdp-accent text-white px-4 py-2 rounded-lg hover:bg-wdp-accent-hover transition-all duration-200 font-medium"
+              >
+                <Plus size={16} />
+                <span>Post News</span>
+              </Link>
               <a
                 href="https://djlink.me/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:flex items-center space-x-2 bg-wdp-accent text-white px-4 py-2 rounded-lg hover:bg-wdp-accent-hover transition-all duration-200 font-medium"
+                className="flex items-center space-x-2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
               >
-                <Plus size={16} />
-                <span>Join Djlinkme</span>
+                <span>Join DJLink.me</span>
               </a>
             </nav>
           </div>

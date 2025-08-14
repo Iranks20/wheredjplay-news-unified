@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Plus, 
   Search, 
@@ -33,10 +33,26 @@ export default function Users() {
 
   const [showFilters, setShowFilters] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState<number | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     execute(() => UsersService.getUsers(filters));
   }, [execute, filters]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
@@ -69,6 +85,14 @@ export default function Users() {
     } catch (error: any) {
       alert(error.message || 'Error deleting user');
     }
+  };
+
+  const toggleDropdown = (userId: number) => {
+    setOpenDropdown(openDropdown === userId ? null : userId);
+  };
+
+  const closeDropdown = () => {
+    setOpenDropdown(null);
   };
 
   const getRoleColor = (role: string) => {
@@ -323,35 +347,47 @@ export default function Users() {
 
                       {/* Actions */}
                       <div className="flex items-center space-x-2">
-                        <div className="relative">
-                          <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                        <div className="relative" ref={dropdownRef}>
+                          <button 
+                            onClick={() => toggleDropdown(user.id)}
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                          >
                             <MoreVertical size={16} className="text-gray-400" />
                           </button>
-                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
-                            <Link
-                              to={`/admin/users/edit/${user.id}`}
-                              className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            >
-                              <Edit size={14} />
-                              <span>Edit</span>
-                            </Link>
-                            
-                            <button
-                              onClick={() => handleStatusChange(user.id, user.status === 'active' ? 'inactive' : 'active')}
-                              className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            >
-                              {user.status === 'active' ? <EyeOff size={14} /> : <Eye size={14} />}
-                              <span>{user.status === 'active' ? 'Deactivate' : 'Activate'}</span>
-                            </button>
-                            
-                            <button
-                              onClick={() => setShowDeleteModal(user.id)}
-                              className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 size={14} />
-                              <span>Delete</span>
-                            </button>
-                          </div>
+                          {openDropdown === user.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                              <Link
+                                to={`/admin/users/edit/${user.id}`}
+                                onClick={closeDropdown}
+                                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <Edit size={14} />
+                                <span>Edit</span>
+                              </Link>
+                              
+                              <button
+                                onClick={() => {
+                                  handleStatusChange(user.id, user.status === 'active' ? 'inactive' : 'active');
+                                  closeDropdown();
+                                }}
+                                className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                {user.status === 'active' ? <EyeOff size={14} /> : <Eye size={14} />}
+                                <span>{user.status === 'active' ? 'Deactivate' : 'Activate'}</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  setShowDeleteModal(user.id);
+                                  closeDropdown();
+                                }}
+                                className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              >
+                                <Trash2 size={14} />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -13,7 +13,7 @@ const getApiUrl = (endpoint: string) => {
     return `${baseUrl}${endpoint}`;
   }
   // Otherwise, add the /api/v1 prefix
-  return `${baseUrl}${endpoint}`;
+  return `${baseUrl}/api/v1${endpoint}`;
 };
 
 // API Response Types
@@ -170,30 +170,30 @@ const apiClient = new ApiClient();
 // API Service Classes
 export class AuthService {
   static async login(email: string, password: string) {
-    return apiClient.post<{ user: any; token: string }>('/api/v1/auth/login', {
+    return apiClient.post<{ user: any; token: string }>('/auth/login', {
       email,
       password,
     });
   }
 
   static async register(userData: { name: string; email: string; password: string; role?: string }) {
-    return apiClient.post<{ user: any; token: string }>('/api/v1/auth/register', userData);
+    return apiClient.post<{ user: any; token: string }>('/auth/register', userData);
   }
 
   static async getCurrentUser() {
-    return apiClient.get<any>('/api/v1/auth/me');
+    return apiClient.get<any>('/auth/me');
   }
 
   static async logout() {
-    return apiClient.post('/api/v1/auth/logout');
+    return apiClient.post('/auth/logout');
   }
 
   static async refreshToken() {
-    return apiClient.post<{ token: string }>('/api/v1/auth/refresh');
+    return apiClient.post<{ token: string }>('/auth/refresh');
   }
 
   static async changePassword(currentPassword: string, newPassword: string) {
-    return apiClient.put('/api/v1/auth/change-password', {
+    return apiClient.put('/auth/change-password', {
       currentPassword,
       newPassword,
     });
@@ -212,61 +212,61 @@ export class ArticlesService {
     sort?: string;
     order?: string;
   }) {
-    return apiClient.get<PaginatedResponse<any>>('/api/v1/articles', params);
+    return apiClient.get<PaginatedResponse<any>>('/articles', params);
   }
 
   static async getArticle(id: string | number) {
-    return apiClient.get<any>(`/api/v1/articles/${id}`);
+    return apiClient.get<any>(`/articles/${id}`);
   }
 
   static async createArticle(articleData: any) {
-    return apiClient.post<any>('/api/v1/articles', articleData);
+    return apiClient.post<any>('/articles', articleData);
   }
 
   static async updateArticle(id: string | number, articleData: any) {
-    return apiClient.put<any>(`/api/v1/articles/${id}`, articleData);
+    return apiClient.put<any>(`/articles/${id}`, articleData);
   }
 
   static async deleteArticle(id: string | number) {
-    return apiClient.delete(`/api/v1/articles/${id}`);
+    return apiClient.delete(`/articles/${id}`);
   }
 
   static async publishArticle(id: string | number) {
-    return apiClient.post(`/api/v1/articles/${id}/publish`);
+    return apiClient.post(`/articles/${id}/publish`);
   }
 
   static async unpublishArticle(id: string | number) {
-    return apiClient.post(`/api/v1/articles/${id}/unpublish`);
+    return apiClient.post(`/articles/${id}/unpublish`);
   }
 
   static async toggleFeatured(id: string | number) {
-    return apiClient.post(`/api/v1/articles/${id}/feature`);
+    return apiClient.post(`/articles/${id}/feature`);
   }
 
   static async getFeaturedArticles(limit?: number) {
-    return apiClient.get<any[]>('/api/v1/articles/featured', { limit });
+    return apiClient.get<any[]>('/articles/featured', { limit });
   }
 }
 
 export class CategoriesService {
   static async getCategories() {
-    return apiClient.get<any[]>('/api/v1/categories');
+    return apiClient.get<any[]>('/categories');
   }
 
   static async getCategory(id: string | number) {
-    return apiClient.get<any>(`/api/v1/categories/${id}`);
+    return apiClient.get<any>(`/categories/${id}`);
   }
 
   static async createCategory(categoryData: any) {
-    return apiClient.post<any>('/api/v1/categories', categoryData);
+    return apiClient.post<any>('/categories', categoryData);
   }
 
   static async updateCategory(id: string | number, categoryData: any) {
-    return apiClient.put<any>(`/api/v1/categories/${id}`, categoryData);
+    return apiClient.put<any>(`/categories/${id}`, categoryData);
   }
 
   static async deleteCategory(id: string | number) {
-    return apiClient.delete(`/api/v1/categories/${id}`);
+    return apiClient.delete(`/categories/${id}`);
   }
 
   static async getCategoryArticles(id: string | number, params?: {
@@ -274,7 +274,7 @@ export class CategoriesService {
     limit?: number;
     status?: string;
   }) {
-    return apiClient.get<PaginatedResponse<any>>(`/api/v1/categories/${id}/articles`, params);
+    return apiClient.get<PaginatedResponse<any>>(`/categories/${id}/articles`, params);
   }
 }
 
@@ -285,27 +285,27 @@ export class UsersService {
     role?: string;
     status?: string;
   }) {
-    return apiClient.get<PaginatedResponse<any>>('/api/v1/users', params);
+    return apiClient.get<PaginatedResponse<any>>('/users', params);
   }
 
   static async getUser(id: string | number) {
-    return apiClient.get<any>(`/api/v1/users/${id}`);
+    return apiClient.get<any>(`/users/${id}`);
   }
 
   static async createUser(userData: any) {
-    return apiClient.post<any>('/api/v1/users', userData);
+    return apiClient.post<any>('/users', userData);
   }
 
   static async updateUser(id: string | number, userData: any) {
-    return apiClient.put<any>(`/api/v1/users/${id}`, userData);
+    return apiClient.put<any>(`/users/${id}`, userData);
   }
 
   static async deleteUser(id: string | number) {
-    return apiClient.delete(`/api/v1/users/${id}`);
+    return apiClient.delete(`/users/${id}`);
   }
 
   static async updateUserStatus(id: string | number, status: 'active' | 'inactive') {
-    return apiClient.put(`/api/v1/users/${id}/status`, { status });
+    return apiClient.put(`/users/${id}/status`, { status });
   }
 
   static async getUserArticles(id: string | number, params?: {
@@ -313,7 +313,7 @@ export class UsersService {
     limit?: number;
     status?: string;
   }) {
-    return apiClient.get<PaginatedResponse<any>>(`/api/v1/users/${id}/articles`, params);
+    return apiClient.get<PaginatedResponse<any>>(`/users/${id}/articles`, params);
   }
 }
 
@@ -321,35 +321,35 @@ export class UploadService {
   static async uploadImage(file: File) {
     const formData = new FormData();
     formData.append('image', file);
-    return apiClient.upload<any>('/api/v1/upload/image', formData);
+    return apiClient.upload<any>('/upload/image', formData);
   }
 
   static async uploadAvatar(file: File) {
     const formData = new FormData();
     formData.append('avatar', file);
-    return apiClient.upload<any>('/api/v1/upload/avatar', formData);
+    return apiClient.upload<any>('/upload/avatar', formData);
   }
 
   static async deleteFile(filename: string) {
-    return apiClient.delete(`/api/v1/upload/${filename}`);
+    return apiClient.delete(`/upload/${filename}`);
   }
 }
 
 export class AnalyticsService {
   static async getDashboard() {
-    return apiClient.get<any>('/api/v1/analytics/dashboard');
+    return apiClient.get<any>('/analytics/dashboard');
   }
 
   static async getArticleAnalytics(period?: number) {
-    return apiClient.get<any>('/api/v1/analytics/articles', { period });
+    return apiClient.get<any>('/analytics/articles', { period });
   }
 
   static async getViewAnalytics(period?: number) {
-    return apiClient.get<any>('/api/v1/analytics/views', { period });
+    return apiClient.get<any>('/analytics/views', { period });
   }
 
   static async getPopularArticles(limit?: number, period?: number) {
-    return apiClient.get<any[]>('/api/v1/analytics/popular', { limit, period });
+    return apiClient.get<any[]>('/analytics/popular', { limit, period });
   }
 }
 
@@ -361,31 +361,31 @@ export class SearchService {
     page?: number;
     limit?: number;
   }) {
-    return apiClient.get<PaginatedResponse<any>>('/api/v1/search/articles', params);
+    return apiClient.get<PaginatedResponse<any>>('/search/articles', params);
   }
 
   static async getSearchSuggestions(query: string) {
-    return apiClient.get<any[]>('/api/v1/search/suggestions', { q: query });
+    return apiClient.get<any[]>('/search/suggestions', { q: query });
   }
 }
 
 export class NewsletterService {
   static async subscribe(email: string, name?: string) {
-    return apiClient.post('/api/v1/newsletter/subscribe', { email, name });
+    return apiClient.post('/newsletter/subscribe', { email, name });
   }
 
   static async unsubscribe(email: string) {
-    return apiClient.post('/api/v1/newsletter/unsubscribe', { email });
+    return apiClient.post('/newsletter/unsubscribe', { email });
   }
 }
 
 export class SettingsService {
   static async getSettings() {
-    return apiClient.get<any>('/api/v1/settings');
+    return apiClient.get<any>('/settings');
   }
 
   static async updateSettings(settings: Record<string, any>) {
-    return apiClient.put('/api/v1/settings', settings);
+    return apiClient.put('/settings', settings);
   }
 }
 

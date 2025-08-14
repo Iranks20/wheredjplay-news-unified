@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Plus, 
   Search, 
@@ -33,6 +33,8 @@ export default function Articles() {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchCategories(() => CategoriesService.getCategories());
@@ -41,6 +43,20 @@ export default function Articles() {
   useEffect(() => {
     execute(() => ArticlesService.getArticles(filters));
   }, [execute, filters]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
@@ -88,6 +104,14 @@ export default function Articles() {
         console.error('Error deleting article:', error);
       }
     }
+  };
+
+  const toggleDropdown = (articleId: number) => {
+    setOpenDropdown(openDropdown === articleId ? null : articleId);
+  };
+
+  const closeDropdown = () => {
+    setOpenDropdown(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -338,53 +362,71 @@ export default function Articles() {
                           <Star size={16} className="text-yellow-500" />
                         )}
 
-                        <div className="relative">
-                          <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                        <div className="relative" ref={dropdownRef}>
+                          <button 
+                            onClick={() => toggleDropdown(article.id)}
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                          >
                             <MoreVertical size={16} className="text-gray-400" />
                           </button>
-                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
-                            <Link
-                              to={`/admin/articles/edit/${article.id}`}
-                              className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            >
-                              <Edit size={14} />
-                              <span>Edit</span>
-                            </Link>
-                            
-                            <button
-                              onClick={() => handleFeaturedToggle(article.id)}
-                              className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            >
-                              {article.featured ? <StarOff size={14} /> : <Star size={14} />}
-                              <span>{article.featured ? 'Unfeature' : 'Feature'}</span>
-                            </button>
-                            
-                            {article.status === 'draft' ? (
+                          {openDropdown === article.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                              <Link
+                                to={`/admin/articles/edit/${article.id}`}
+                                onClick={closeDropdown}
+                                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <Edit size={14} />
+                                <span>Edit</span>
+                              </Link>
+                              
                               <button
-                                onClick={() => handleStatusChange(article.id, 'published')}
+                                onClick={() => {
+                                  handleFeaturedToggle(article.id);
+                                  closeDropdown();
+                                }}
                                 className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
-                                <Eye size={14} />
-                                <span>Publish</span>
+                                {article.featured ? <StarOff size={14} /> : <Star size={14} />}
+                                <span>{article.featured ? 'Unfeature' : 'Feature'}</span>
                               </button>
-                            ) : (
+                              
+                              {article.status === 'draft' ? (
+                                <button
+                                  onClick={() => {
+                                    handleStatusChange(article.id, 'published');
+                                    closeDropdown();
+                                  }}
+                                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                >
+                                  <Eye size={14} />
+                                  <span>Publish</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    handleStatusChange(article.id, 'draft');
+                                    closeDropdown();
+                                  }}
+                                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                >
+                                  <EyeOff size={14} />
+                                  <span>Unpublish</span>
+                                </button>
+                              )}
+                              
                               <button
-                                onClick={() => handleStatusChange(article.id, 'draft')}
-                                className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                onClick={() => {
+                                  handleDelete(article.id);
+                                  closeDropdown();
+                                }}
+                                className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                               >
-                                <EyeOff size={14} />
-                                <span>Unpublish</span>
+                                <Trash2 size={14} />
+                                <span>Delete</span>
                               </button>
-                            )}
-                            
-                            <button
-                              onClick={() => handleDelete(article.id)}
-                              className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 size={14} />
-                              <span>Delete</span>
-                            </button>
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -5,4 +5,5 @@ export { default as ArticleEditor } from './ArticleEditor';
 export { default as Categories } from './Categories';
 export { default as CategoryEditor } from './CategoryEditor';
 export { default as Users } from './Users';
+export { default as UserEditor } from './UserEditor';
 export { default as Settings } from './Settings';

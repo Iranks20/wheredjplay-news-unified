@@ -65,18 +65,20 @@ export default function ArticleEditor() {
       }
     };
 
-    // Load users
+    // Load users (authors only)
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const response = await UsersService.getUsers();
-        // Handle both direct array and paginated response
-        const usersData = response.data?.data || response.data || [];
-        setUsers(Array.isArray(usersData) ? usersData : []);
-        console.log('Users loaded:', usersData);
+        // Filter for authors only by passing role=author parameter
+        const response = await UsersService.getUsers({ role: 'author' });
+        // Handle backend response structure: { data: { users: [...], pagination: {...} } }
+        const usersData = response.data?.users || [];
+        const authors = Array.isArray(usersData) ? usersData : [];
+        setUsers(authors);
+        console.log('Authors loaded:', authors);
       } catch (err: any) {
-        console.error('Error loading users:', err);
-        setError('Error loading users: ' + err.message);
+        console.error('Error loading authors:', err);
+        setError('Error loading authors: ' + err.message);
       } finally {
         setUsersLoading(false);
       }
@@ -583,7 +585,7 @@ export default function ArticleEditor() {
                   </option>
                   {users.length > 0 ? (
                     users.map((user: any) => (
-                      <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
+                      <option key={user.id} value={user.id}>{user.name}</option>
                     ))
                   ) : (
                     !usersLoading && (

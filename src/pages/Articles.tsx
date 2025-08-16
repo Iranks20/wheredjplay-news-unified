@@ -10,23 +10,27 @@ import {
   Trash2, 
   Eye,
   EyeOff,
-  Star,
-  StarOff,
   Calendar,
   User,
-  Tag
+  Star,
+  StarOff,
+  FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useApiWithPagination } from '../hooks/useApi';
-import { ArticlesService, CategoriesService } from '../lib/api';
+import { useApi, useApiWithPagination } from '../hooks/useApi';
+import { ArticlesService, CategoriesService, UsersService } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Articles() {
   const { data: articlesData, loading, error, execute, pagination } = useApiWithPagination();
-  const { data: categories, loading: categoriesLoading, execute: fetchCategories } = useApiWithPagination();
+  const { data: categories, execute: fetchCategories } = useApi();
+  const { data: authors, execute: fetchAuthors } = useApi();
+  const { isAuthenticated, token, user } = useAuth();
   
   const [filters, setFilters] = useState({
     status: 'all',
     category: '',
+    author: '',
     search: '',
     page: 1,
     limit: 10
@@ -37,8 +41,44 @@ export default function Articles() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Debug authentication state
+    console.log('Auth state:', { isAuthenticated, token: token ? 'present' : 'missing', user });
+    
+    // Test API connectivity
+    const testApiConnection = async () => {
+      try {
+        console.log('Testing API connection...');
+        
+        // Test health endpoint
+        const healthResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/health`);
+        console.log('API health check response:', healthResponse.status, healthResponse.ok);
+        
+        // Test articles endpoint without auth
+        const articlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`);
+        console.log('Articles endpoint response:', articlesResponse.status, articlesResponse.ok);
+        
+        // Test articles endpoint with auth
+        if (token) {
+          const authArticlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          console.log('Authenticated articles response:', authArticlesResponse.status, authArticlesResponse.ok);
+        } else {
+          console.log('No auth token available');
+        }
+        
+      } catch (error) {
+        console.error('API health check failed:', error);
+      }
+    };
+    
+    testApiConnection();
     fetchCategories(() => CategoriesService.getCategories());
-  }, [fetchCategories]);
+    fetchAuthors(() => UsersService.getUsers({ role: 'author' }));
+  }, [fetchCategories, fetchAuthors, isAuthenticated, token, user]);
 
   useEffect(() => {
     execute(() => ArticlesService.getArticles(filters));
@@ -72,36 +112,55 @@ export default function Articles() {
 
   const handleStatusChange = async (articleId: number, newStatus: string) => {
     try {
+      console.log('Changing article status:', articleId, 'to', newStatus);
+      
       if (newStatus === 'published') {
-        await ArticlesService.publishArticle(articleId);
+        const response = await ArticlesService.publishArticle(articleId);
+        console.log('Publish response:', response);
       } else if (newStatus === 'draft') {
-        await ArticlesService.unpublishArticle(articleId);
+        const response = await ArticlesService.unpublishArticle(articleId);
+        console.log('Unpublish response:', response);
       }
+      
       // Refresh the articles list
-      execute(() => ArticlesService.getArticles(filters));
+      await execute(() => ArticlesService.getArticles(filters));
+      console.log('Articles refreshed successfully');
     } catch (error) {
       console.error('Error updating article status:', error);
+      alert(`Error updating article status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const handleFeaturedToggle = async (articleId: number) => {
     try {
-      await ArticlesService.toggleFeatured(articleId);
+      console.log('Toggling featured status for article:', articleId);
+      
+      const response = await ArticlesService.toggleFeatured(articleId);
+      console.log('Toggle featured response:', response);
+      
       // Refresh the articles list
-      execute(() => ArticlesService.getArticles(filters));
+      await execute(() => ArticlesService.getArticles(filters));
+      console.log('Articles refreshed successfully');
     } catch (error) {
       console.error('Error toggling featured status:', error);
+      alert(`Error toggling featured status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const handleDelete = async (articleId: number) => {
     if (window.confirm('Are you sure you want to delete this article?')) {
       try {
-        await ArticlesService.deleteArticle(articleId);
+        console.log('Deleting article:', articleId);
+        
+        const response = await ArticlesService.deleteArticle(articleId);
+        console.log('Delete response:', response);
+        
         // Refresh the articles list
-        execute(() => ArticlesService.getArticles(filters));
+        await execute(() => ArticlesService.getArticles(filters));
+        console.log('Articles refreshed successfully');
       } catch (error) {
         console.error('Error deleting article:', error);
+        alert(`Error deleting article: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
   };
@@ -194,13 +253,15 @@ export default function Articles() {
             Manage your news articles and content
           </p>
         </div>
-        <Link
-          to="/admin/articles/new"
-          className="flex items-center space-x-2 bg-admin-accent text-white px-4 py-2 rounded-lg hover:bg-admin-accent-hover transition-colors"
-        >
-          <Plus size={16} />
-          <span>New Article</span>
-        </Link>
+        <div className="flex items-center space-x-4">
+          <Link
+            to="/admin/articles/new"
+            className="flex items-center space-x-2 bg-admin-accent text-white px-4 py-2 rounded-lg hover:bg-admin-accent-hover transition-colors"
+          >
+            <Plus size={16} />
+            <span>New Article</span>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -269,6 +330,25 @@ export default function Articles() {
               </select>
             </div>
 
+            {/* Author Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Author
+              </label>
+              <select
+                value={filters.author}
+                onChange={(e) => handleFilterChange('author', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-admin-accent focus:border-transparent"
+              >
+                <option value="">All Authors</option>
+                {authors?.users?.map((author: any) => (
+                  <option key={author.id} value={author.id}>
+                    {author.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Limit Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -320,7 +400,7 @@ export default function Articles() {
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                          <Tag size={20} className="text-gray-400" />
+                          <FileText size={20} className="text-gray-400" />
                         </div>
                       )}
                     </div>
@@ -362,7 +442,7 @@ export default function Articles() {
                           <Star size={16} className="text-yellow-500" />
                         )}
 
-                        <div className="relative" ref={dropdownRef}>
+                        <div className="relative">
                           <button 
                             onClick={() => toggleDropdown(article.id)}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
@@ -370,7 +450,10 @@ export default function Articles() {
                             <MoreVertical size={16} className="text-gray-400" />
                           </button>
                           {openDropdown === article.id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                            <div 
+                              ref={dropdownRef}
+                              className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10"
+                            >
                               <Link
                                 to={`/admin/articles/edit/${article.id}`}
                                 onClick={closeDropdown}
@@ -391,29 +474,16 @@ export default function Articles() {
                                 <span>{article.featured ? 'Unfeature' : 'Feature'}</span>
                               </button>
                               
-                              {article.status === 'draft' ? (
-                                <button
-                                  onClick={() => {
-                                    handleStatusChange(article.id, 'published');
-                                    closeDropdown();
-                                  }}
-                                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                >
-                                  <Eye size={14} />
-                                  <span>Publish</span>
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => {
-                                    handleStatusChange(article.id, 'draft');
-                                    closeDropdown();
-                                  }}
-                                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                >
-                                  <EyeOff size={14} />
-                                  <span>Unpublish</span>
-                                </button>
-                              )}
+                              <button
+                                onClick={() => {
+                                  handleStatusChange(article.id, article.status === 'draft' ? 'published' : 'draft');
+                                  closeDropdown();
+                                }}
+                                className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                {article.status === 'draft' ? <Eye size={14} /> : <EyeOff size={14} />}
+                                <span>{article.status === 'draft' ? 'Publish' : 'Unpublish'}</span>
+                              </button>
                               
                               <button
                                 onClick={() => {
@@ -437,7 +507,7 @@ export default function Articles() {
           ) : (
             <div className="p-12 text-center">
               <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Tag size={24} className="text-gray-400" />
+                <FileText size={24} className="text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No articles found</h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">

@@ -14,7 +14,9 @@ import {
   Shield,
   FileText,
   Eye,
-  EyeOff
+  EyeOff,
+  UserX,
+  UserCheck
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApiWithPagination } from '../hooks/useApi';
@@ -68,22 +70,35 @@ export default function Users() {
 
   const handleStatusChange = async (userId: number, newStatus: 'active' | 'inactive') => {
     try {
-      await UsersService.updateUserStatus(userId, newStatus);
+      console.log('Changing user status:', userId, 'to', newStatus);
+      
+      const response = await UsersService.updateUserStatus(userId, newStatus);
+      console.log('Update user status response:', response);
+      
       // Refresh the users list
-      execute(() => UsersService.getUsers(filters));
+      await execute(() => UsersService.getUsers(filters));
+      console.log('Users refreshed successfully');
     } catch (error) {
       console.error('Error updating user status:', error);
+      alert(`Error updating user status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const handleDelete = async (userId: number) => {
     try {
-      await UsersService.deleteUser(userId);
+      console.log('Deleting user:', userId);
+      
+      const response = await UsersService.deleteUser(userId);
+      console.log('Delete user response:', response);
+      
       // Refresh the users list
-      execute(() => UsersService.getUsers(filters));
+      await execute(() => UsersService.getUsers(filters));
+      console.log('Users refreshed successfully');
       setShowDeleteModal(null);
     } catch (error: any) {
-      alert(error.message || 'Error deleting user');
+      console.error('Error deleting user:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error deleting user: ${errorMessage}`);
     }
   };
 
@@ -347,7 +362,7 @@ export default function Users() {
 
                       {/* Actions */}
                       <div className="flex items-center space-x-2">
-                        <div className="relative" ref={dropdownRef}>
+                        <div className="relative">
                           <button 
                             onClick={() => toggleDropdown(user.id)}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
@@ -355,11 +370,14 @@ export default function Users() {
                             <MoreVertical size={16} className="text-gray-400" />
                           </button>
                           {openDropdown === user.id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                            <div 
+                              ref={dropdownRef}
+                              className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10"
+                            >
                               <Link
                                 to={`/admin/users/edit/${user.id}`}
                                 onClick={closeDropdown}
-                                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
                                 <Edit size={14} />
                                 <span>Edit</span>
@@ -372,13 +390,13 @@ export default function Users() {
                                 }}
                                 className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
-                                {user.status === 'active' ? <EyeOff size={14} /> : <Eye size={14} />}
+                                {user.status === 'active' ? <UserX size={14} /> : <UserCheck size={14} />}
                                 <span>{user.status === 'active' ? 'Deactivate' : 'Activate'}</span>
                               </button>
                               
                               <button
                                 onClick={() => {
-                                  setShowDeleteModal(user.id);
+                                  handleDelete(user.id);
                                   closeDropdown();
                                 }}
                                 className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"

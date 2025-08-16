@@ -35,6 +35,8 @@ function App() {
                 <Route path="categories/new" element={<Pages.CategoryEditor />} />
                 <Route path="categories/edit/:id" element={<Pages.CategoryEditor />} />
                 <Route path="users" element={<Pages.Users />} />
+                <Route path="users/new" element={<Pages.UserEditor />} />
+                <Route path="users/edit/:id" element={<Pages.UserEditor />} />
                 <Route path="settings" element={<Pages.Settings />} />
               </Route>
             </Route>

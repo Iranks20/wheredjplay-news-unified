@@ -1,6 +1,6 @@
 // API Configuration
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001',
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3
 };
@@ -108,17 +108,22 @@ class ApiClient {
 
   // Generic HTTP methods
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
-    const url = new URL(getApiUrl(endpoint));
+    let url = endpoint;
     
     if (params) {
+      const searchParams = new URLSearchParams();
       Object.keys(params).forEach(key => {
         if (params[key] !== undefined && params[key] !== null) {
-          url.searchParams.append(key, params[key].toString());
+          searchParams.append(key, params[key].toString());
         }
       });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
     }
     
-    return this.request<T>(endpoint + (params ? `?${url.searchParams.toString()}` : ''));
+    return this.request<T>(url);
   }
 
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
@@ -285,7 +290,7 @@ export class UsersService {
     role?: string;
     status?: string;
   }) {
-    return apiClient.get<PaginatedResponse<any>>('/users', params);
+    return apiClient.get<{ users: any[]; pagination: any }>('/users', params);
   }
 
   static async getUser(id: string | number) {

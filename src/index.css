@@ -126,4 +126,21 @@
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* Admin-specific utility classes */
+.admin-accent {
+  @apply bg-green-600 hover:bg-green-700 text-white;
+}
+
+.admin-accent-hover {
+  @apply bg-green-700;
+}
+
+.admin-success {
+  @apply bg-green-600;
+}
+
+.admin-error {
+  @apply bg-red-600;
 } 

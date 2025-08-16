@@ -40,12 +40,19 @@ export default function Categories() {
 
   const handleDelete = async (categoryId: number) => {
     try {
-      await CategoriesService.deleteCategory(categoryId);
+      console.log('Deleting category:', categoryId);
+      
+      const response = await CategoriesService.deleteCategory(categoryId);
+      console.log('Delete category response:', response);
+      
       // Refresh the categories list
-      execute(() => CategoriesService.getCategories());
+      await execute(() => CategoriesService.getCategories());
+      console.log('Categories refreshed successfully');
       setShowDeleteModal(null);
     } catch (error: any) {
-      alert(error.message || 'Error deleting category');
+      console.error('Error deleting category:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error deleting category: ${errorMessage}`);
     }
   };
 
@@ -171,7 +178,7 @@ export default function Categories() {
                 </div>
 
                 {/* Actions */}
-                <div className="relative" ref={dropdownRef}>
+                <div className="relative">
                   <button 
                     onClick={() => toggleDropdown(category.id)}
                     className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
@@ -179,7 +186,10 @@ export default function Categories() {
                     <MoreVertical size={16} className="text-gray-400" />
                   </button>
                   {openDropdown === category.id && (
-                    <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                    <div 
+                      ref={dropdownRef}
+                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10"
+                    >
                       <Link
                         to={`/admin/categories/edit/${category.id}`}
                         onClick={closeDropdown}
@@ -191,7 +201,7 @@ export default function Categories() {
                       
                       <button
                         onClick={() => {
-                          setShowDeleteModal(category.id);
+                          handleDelete(category.id);
                           closeDropdown();
                         }}
                         className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"

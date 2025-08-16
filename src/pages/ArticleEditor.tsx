@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Save, 
@@ -12,6 +12,8 @@ import {
   Globe,
   Tag
 } from 'lucide-react'
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { ArticlesService, CategoriesService, UsersService } from '../lib/api';
 import { ImageUploadService } from '../lib/uploadService';
 
@@ -19,6 +21,7 @@ export default function ArticleEditor() {
   const { id } = useParams()
   const navigate = useNavigate()
   const isEditing = id !== 'new'
+  const quillRef = useRef<ReactQuill>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -48,90 +51,137 @@ export default function ArticleEditor() {
   const [users, setUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
 
-  // Load categories, users and article data
-  useEffect(() => {
-    // Load categories
-    const loadCategories = async () => {
-      setCategoriesLoading(true);
-      try {
-        const response = await CategoriesService.getCategories();
-        setCategories(response.data || []);
-        console.log('Categories loaded:', response.data);
-      } catch (err: any) {
-        console.error('Error loading categories:', err);
-        setError('Error loading categories: ' + err.message);
-      } finally {
-        setCategoriesLoading(false);
+  // Simple Quill editor configuration
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      ['link', 'image', 'video'],
+      ['blockquote', 'code-block'],
+      ['clean']
+    ],
+    clipboard: {
+      matchVisual: false
+    },
+    keyboard: {
+      bindings: {
+        tab: false
       }
-    };
-
-    // Load users (authors only)
-    const loadUsers = async () => {
-      setUsersLoading(true);
-      try {
-        // Filter for authors only by passing role=author parameter
-        const response = await UsersService.getUsers({ role: 'author' });
-        // Handle backend response structure: { data: { users: [...], pagination: {...} } }
-        const usersData = response.data?.users || [];
-        const authors = Array.isArray(usersData) ? usersData : [];
-        setUsers(authors);
-        console.log('Authors loaded:', authors);
-      } catch (err: any) {
-        console.error('Error loading authors:', err);
-        setError('Error loading authors: ' + err.message);
-      } finally {
-        setUsersLoading(false);
-      }
-    };
-
-    loadCategories();
-    loadUsers();
-  }, []);
-
-  // Load article data if editing
-  useEffect(() => {
-    if (isEditing && id) {
-      ArticlesService.getArticle(id).then(response => {
-        console.log('Article API response:', response);
-        const article = response.data || response;
-        console.log('Article data:', article);
-        
-        setFormData({
-          title: article.title || '',
-          excerpt: article.excerpt || '',
-          content: article.content || '',
-          category: article.category_id?.toString() || '',
-          author: article.author_id?.toString() || '',
-          image: article.image || '',
-          featured: article.featured || false,
-          status: article.status || 'draft',
-          tags: article.tags || '',
-          seoTitle: article.seo_title || '',
-          seoDescription: article.seo_description || '',
-          publishDate: article.publish_date ? new Date(article.publish_date).toISOString().slice(0, 16) : ''
-        });
-      }).catch(err => {
-        console.error('Error loading article:', err);
-        setError('Error loading article: ' + err.message);
-      });
     }
-  }, [isEditing, id])
+  };
 
-  // Cleanup object URLs on unmount or when preview changes
-  useEffect(() => {
-    return () => {
-      if (imagePreview) {
-        URL.revokeObjectURL(imagePreview);
+  const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'indent',
+    'color', 'background',
+    'align',
+    'link', 'image', 'video',
+    'blockquote', 'code-block'
+  ];
+
+  // Simple content change handler
+  const handleContentChange = (content: string) => {
+    handleInputChange('content', content);
+  };
+
+  // Simple auto-scroll function
+  const handleAutoScroll = () => {
+    setTimeout(() => {
+      if (quillRef.current) {
+        const quill = quillRef.current.getEditor();
+        const editorElement = quill.root;
+        if (editorElement) {
+          editorElement.scrollTop = editorElement.scrollHeight;
+        }
       }
-    };
-  }, [imagePreview]);
+    }, 100);
+  };
 
+  // Simple form validation
+  const validateForm = () => {
+    if (!formData.title.trim()) {
+      setError('Article title is required');
+      return false;
+    }
+    if (!formData.excerpt.trim()) {
+      setError('Article excerpt is required');
+      return false;
+    }
+    if (!formData.content.trim()) {
+      setError('Article content is required');
+      return false;
+    }
+    if (!formData.category) {
+      setError('Please select a category');
+      return false;
+    }
+    if (!formData.author) {
+      setError('Please select an author');
+      return false;
+    }
+    return true;
+  };
+
+  // Simple save function
+  const handleSave = async (status: 'draft' | 'published') => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    
+    try {
+      const articleData = {
+        title: formData.title.trim(),
+        excerpt: formData.excerpt.trim(),
+        content: formData.content,
+        category_id: parseInt(formData.category),
+        author_id: parseInt(formData.author),
+        image: formData.image,
+        featured: formData.featured,
+        status: status,
+        tags: formData.tags.trim(),
+        seo_title: formData.seoTitle.trim(),
+        seo_description: formData.seoDescription.trim(),
+        publish_date: formData.publishDate || null
+      };
+      
+      let response;
+      if (isEditing && id) {
+        response = await ArticlesService.updateArticle(id, articleData);
+      } else {
+        response = await ArticlesService.createArticle(articleData);
+      }
+      
+      if (response.error) {
+        throw new Error(response.message || 'Failed to save article');
+      }
+      
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000);
+      navigate('/admin/articles');
+      
+    } catch (err: any) {
+      setError('Error saving article: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Essential functions
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
-    }))
-  }
+    }));
+  };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -152,7 +202,6 @@ export default function ArticleEditor() {
 
     // Show preview immediately
     const previewUrl = URL.createObjectURL(file);
-    // Revoke previous preview URL if it exists
     if (imagePreview) {
       URL.revokeObjectURL(imagePreview);
     }
@@ -163,20 +212,13 @@ export default function ArticleEditor() {
     setUploadSuccess(false);
 
     try {
-      console.log('Starting image upload:', file.name, file.size, file.type);
-      console.log('API URL:', import.meta.env.VITE_API_URL || 'http://localhost:3001');
-      
       const result = await ImageUploadService.uploadImage(file);
-
-      console.log('Upload result:', result);
 
       if (!result.success) {
         throw new Error(result.message || 'Error uploading image');
       }
 
-      // Store the full URL in the form data
       const imageUrl = result.data?.fullUrl || result.data?.url;
-      console.log('Upload successful! Image URL:', imageUrl);
       
       if (!imageUrl) {
         throw new Error('No image URL returned from server');
@@ -189,12 +231,10 @@ export default function ArticleEditor() {
       }
       
       setUploadSuccess(true);
-      setTimeout(() => setUploadSuccess(false), 3000); // Hide success message after 3 seconds
+      setTimeout(() => setUploadSuccess(false), 3000);
       
-      // Clear the file input
       event.target.value = '';
     } catch (err: any) {
-      console.error('Upload error:', err);
       setError('Error uploading image: ' + err.message);
       if (imagePreview) {
         URL.revokeObjectURL(imagePreview);
@@ -205,76 +245,155 @@ export default function ArticleEditor() {
     }
   };
 
-  const handleSave = async (status: 'draft' | 'published') => {
-    setIsSaving(true)
-    setError(null)
-    
-    try {
-      // Validate required fields
-      if (!formData.title || !formData.excerpt || !formData.content || !formData.category || !formData.author) {
-        throw new Error('Please fill in all required fields including category and author');
+  // Load data
+  useEffect(() => {
+    // Load categories
+    const loadCategories = async () => {
+      setCategoriesLoading(true);
+      try {
+        const response = await CategoriesService.getCategories();
+        setCategories(response.data || []);
+      } catch (err: any) {
+        console.error('Error loading categories:', err);
+        setError('Error loading categories: ' + err.message);
+      } finally {
+        setCategoriesLoading(false);
       }
+    };
 
-      const categoryId = parseInt(formData.category);
-      if (isNaN(categoryId)) {
-        throw new Error('Please select a valid category');
+    // Load users (authors only)
+    const loadUsers = async () => {
+      setUsersLoading(true);
+      try {
+        const response = await UsersService.getUsers({ role: 'author' });
+        const usersData = response.data?.users || [];
+        const authors = Array.isArray(usersData) ? usersData : [];
+        setUsers(authors);
+      } catch (err: any) {
+        console.error('Error loading authors:', err);
+        setError('Error loading authors: ' + err.message);
+      } finally {
+        setUsersLoading(false);
       }
+    };
 
-      const authorId = parseInt(formData.author);
-      if (isNaN(authorId)) {
-        throw new Error('Please select a valid author');
-      }
+    loadCategories();
+    loadUsers();
+  }, []);
 
-      const articleData = {
-        title: formData.title,
-        excerpt: formData.excerpt,
-        content: formData.content,
-        category_id: categoryId,
-        author_id: authorId,
-        featured: formData.featured,
-        status: status,
-        tags: formData.tags,
-        seo_title: formData.seoTitle,
-        seo_description: formData.seoDescription,
-        image: formData.image || null,
-        ...(status === 'published' && { publish_date: new Date().toISOString() })
-      }
-
-      let response;
-      if (isEditing && id) {
-        response = await ArticlesService.updateArticle(id, articleData);
-      } else {
-        response = await ArticlesService.createArticle(articleData);
-      }
-
-      if (response.error) {
-        throw new Error(response.message || 'Error saving article');
-      }
-
-      // Navigate back to articles list on success
-      navigate('/admin/articles');
-    } catch (err: any) {
-      setError(err.message || 'Error saving article');
-    } finally {
-      setIsSaving(false)
+  // Load article data if editing
+  useEffect(() => {
+    if (isEditing && id) {
+      ArticlesService.getArticle(id).then(response => {
+        const article = response.data || response;
+        
+        setFormData({
+          title: article.title || '',
+          excerpt: article.excerpt || '',
+          content: article.content || '',
+          category: article.category_id?.toString() || '',
+          author: article.author_id?.toString() || '',
+          image: article.image || '',
+          featured: article.featured || false,
+          status: article.status || 'draft',
+          tags: article.tags || '',
+          seoTitle: article.seo_title || '',
+          seoDescription: article.seo_description || '',
+          publishDate: article.publish_date ? new Date(article.publish_date).toISOString().slice(0, 16) : ''
+        });
+      }).catch(err => {
+        console.error('Error loading article:', err);
+        setError('Error loading article: ' + err.message);
+      });
     }
-  }
+  }, [isEditing, id]);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  // Custom link handler to open links in new tab
+  const handleLinkClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'A') {
+      e.preventDefault();
+      window.open(target.getAttribute('href'), '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <div className="space-y-6">
-      
-      {/* Error Message */}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {isEditing ? 'Edit Article' : 'Create New Article'}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            {isEditing ? 'Update your article content and settings' : 'Write and publish your article'}
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <button
+            type="button"
+            onClick={() => setShowPreview(!showPreview)}
+            className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <Eye size={20} />
+            <span>{showPreview ? 'Hide Preview' : 'Preview'}</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => handleSave('draft')}
+            disabled={isSaving}
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+          >
+            <Save size={20} />
+            <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => handleSave('published')}
+            disabled={isSaving}
+            className="flex items-center space-x-2 px-4 py-2 bg-admin-accent text-white rounded-lg hover:bg-admin-accent-hover transition-colors disabled:opacity-50"
+          >
+            <Save size={20} />
+            <span>{isSaving ? 'Publishing...' : 'Publish'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Error Display */}
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
-                Error
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                Please fix the following errors:
               </h3>
-              <div className="mt-2 text-sm text-red-700 dark:text-red-400">
-                {error}
+              <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                <pre className="whitespace-pre-wrap font-sans">{error}</pre>
               </div>
             </div>
+            <button
+              onClick={() => setError(null)}
+              className="flex-shrink-0 text-red-400 hover:text-red-600 dark:hover:text-red-300"
+            >
+              <X size={20} />
+            </button>
           </div>
         </div>
       )}
@@ -282,55 +401,20 @@ export default function ArticleEditor() {
       {/* Success Message */}
       {uploadSuccess && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-green-800 dark:text-green-300">
-                Success
-              </h3>
-              <div className="mt-2 text-sm text-green-700 dark:text-green-400">
-                Image uploaded successfully!
-              </div>
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                Article saved successfully!
+              </p>
             </div>
           </div>
         </div>
       )}
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {isEditing ? 'Edit Article' : 'New Article'}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {isEditing ? 'Update your article content and settings' : 'Create a new article for your news platform'}
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <Eye size={16} />
-            <span>Preview</span>
-          </button>
-          <button
-            onClick={() => handleSave('draft')}
-            disabled={isSaving}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
-          >
-            <Save size={16} />
-            <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
-          </button>
-          <button
-            onClick={() => handleSave('published')}
-            disabled={isSaving}
-            className="flex items-center space-x-2 px-4 py-2 bg-admin-accent text-white rounded-lg hover:bg-admin-accent-hover transition-colors disabled:opacity-50"
-          >
-            <Globe size={16} />
-            <span>{isSaving ? 'Publishing...' : 'Publish'}</span>
-          </button>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
@@ -444,43 +528,33 @@ export default function ArticleEditor() {
             </div>
           </div>
 
-          {/* Content Editor */}
+          {/* Content Editor - WYSIWYG */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Article Content
             </label>
-            <div className="border border-gray-300 dark:border-gray-600 rounded-lg">
-              {/* Toolbar */}
-              <div className="flex items-center space-x-1 p-2 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
-                <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
-                  <strong>B</strong>
-                </button>
-                <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
-                  <em>I</em>
-                </button>
-                <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
-                  <u>U</u>
-                </button>
-                <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
-                <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
-                  H1
-                </button>
-                <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
-                  H2
-                </button>
-                <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
-                  H3
-                </button>
-              </div>
-              
-              {/* Editor */}
-              <textarea
+            <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+              <ReactQuill
+                ref={quillRef}
+                theme="snow"
                 value={formData.content}
-                onChange={(e) => handleInputChange('content', e.target.value)}
+                onChange={handleContentChange}
+                modules={quillModules}
+                formats={quillFormats}
                 placeholder="Write your article content here..."
-                rows={20}
-                className="w-full p-4 border-none outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 resize-none"
+                style={{ 
+                  height: '400px',
+                  backgroundColor: 'white'
+                }}
+                className="dark:bg-gray-700"
               />
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Use the toolbar above to format your content. You can add links, images, videos, and apply various text formatting options.
+                <br />
+                <strong>Pro tip:</strong> Use the link button in the toolbar to add clickable links to your content.
+              </div>
             </div>
           </div>
         </div>
@@ -666,10 +740,14 @@ export default function ArticleEditor() {
               </div>
             </div>
             <div className="p-6">
-              <article className="prose prose-lg max-w-none">
+              <article className="prose prose-lg max-w-none dark:prose-invert">
                 <h1>{formData.title}</h1>
                 <p className="text-gray-600 dark:text-gray-400">{formData.excerpt}</p>
-                <div dangerouslySetInnerHTML={{ __html: formData.content }} />
+                <div 
+                  className="article-content prose prose-lg max-w-none"
+                  dangerouslySetInnerHTML={{ __html: formData.content }}
+                  onClick={handleLinkClick}
+                />
               </article>
             </div>
           </div>

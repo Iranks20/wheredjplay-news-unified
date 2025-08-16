@@ -8,7 +8,7 @@ import { AuthProvider } from './contexts/AuthContext';
 function App() {
   // Initialize theme from localStorage
   useEffect(() => {
-    const theme = localStorage.getItem('theme') || 'light';
+    const theme = localStorage.getItem('theme') || 'dark';
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, []);
 

@@ -277,8 +277,15 @@ export default function ArticleDetail() {
             {/* Article Content */}
             <div className="prose prose-lg max-w-none text-gray-900 dark:text-wdp-text">
               <div 
-                className="text-gray-900 dark:text-wdp-text leading-relaxed"
+                className="article-content text-gray-900 dark:text-wdp-text leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: article.content }}
+                onClick={(e) => {
+                  const target = e.target as HTMLElement;
+                  if (target.tagName === 'A') {
+                    e.preventDefault();
+                    window.open(target.getAttribute('href'), '_blank', 'noopener,noreferrer');
+                  }
+                }}
               />
             </div>
 

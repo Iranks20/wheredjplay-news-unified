@@ -216,22 +216,6 @@ export default function Homepage() {
   if (loading && !articlesData) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
-        {/* Top Banner Ad for DJLink.me */}
-        <div className="bg-wdp-accent text-white p-3 text-center">
-          <div className="flex items-center justify-center space-x-2">
-            <span className="font-semibold">🎧 Create Your DJ Profile on</span>
-            <a 
-              href="https://djlink.me" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="font-bold underline hover:text-white/80 transition-colors"
-            >
-              DJLink.me
-            </a>
-            <span>→ Connect with venues worldwide</span>
-          </div>
-        </div>
-
         <Header />
 
         <main className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
@@ -253,95 +237,11 @@ export default function Homepage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
-      {/* Top Banner Ad for DJLink.me */}
-      <div className="bg-wdp-accent text-white p-3 text-center">
-        <div className="flex items-center justify-center space-x-2">
-          <span className="font-semibold">🎧 Create Your DJ Profile on</span>
-          <a 
-            href="https://djlink.me" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="font-bold underline hover:text-white/80 transition-colors"
-          >
-            DJLink.me
-          </a>
-          <span>→ Connect with venues worldwide</span>
-        </div>
-      </div>
-
       {/* Header */}
       <Header />
 
       {/* Main Content */}
       <main className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
-        {/* Hero Section - Only show on homepage */}
-        {!category && (
-          <section className="mb-12">
-            <div className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-wdp-surface dark:to-wdp-muted rounded-2xl p-8 md:p-12 text-gray-900 dark:text-wdp-text relative overflow-hidden border border-gray-200 dark:border-wdp-muted">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 bg-wdp-accent/10"></div>
-              <div className="absolute top-0 right-0 w-64 h-64 bg-wdp-accent/20 rounded-full -translate-y-32 translate-x-32"></div>
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-wdp-accent/20 rounded-full translate-y-24 -translate-x-24"></div>
-              
-              <div className="relative z-10">
-                <div className="max-w-4xl">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-12 h-12 bg-wdp-accent/20 rounded-lg flex items-center justify-center">
-                      <Headphones size={24} className="text-wdp-accent" />
-                    </div>
-                    <span className="text-wdp-accent font-semibold">PREMIER ELECTRONIC MUSIC NEWS</span>
-                  </div>
-                  
-                  <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight text-gray-900 dark:text-wdp-text">
-                    WhereDJsPlay
-                    <span className="block text-3xl md:text-4xl text-wdp-accent font-normal mt-2">
-                      Your Ultimate Source for DJ & Electronic Music News
-                    </span>
-                  </h1>
-                  
-                  <p className="text-xl text-gray-700 dark:text-wdp-text/90 mb-8 leading-relaxed max-w-3xl">
-                    Stay ahead of the beat with breaking news, exclusive interviews, gear reviews, and industry insights from the global electronic music scene. From underground techno to mainstream EDM, we cover it all.
-                  </p>
-                  
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <button className="bg-wdp-accent text-white px-8 py-3 rounded-lg font-bold hover:bg-wdp-accent-hover transition-all duration-200 flex items-center justify-center space-x-2">
-                      <span>Explore Latest News</span>
-                      <Zap size={20} />
-                    </button>
-                    <button 
-                      onClick={() => setShowNewsletterModal(true)}
-                      className="border-2 border-wdp-accent/30 text-wdp-accent px-8 py-3 rounded-lg font-bold hover:bg-wdp-accent/10 transition-all duration-200 flex items-center justify-center space-x-2"
-                    >
-                      <span>Subscribe to Newsletter</span>
-                      <Star size={20} />
-                    </button>
-                  </div>
-                  
-                  {/* Stats */}
-                  <div className="flex flex-wrap gap-8 mt-8 pt-8 border-t border-gray-300 dark:border-wdp-muted">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900 dark:text-wdp-text">50K+</div>
-                      <div className="text-wdp-accent text-sm">Monthly Readers</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900 dark:text-wdp-text">1000+</div>
-                      <div className="text-wdp-accent text-sm">Articles Published</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900 dark:text-wdp-text">24/7</div>
-                      <div className="text-wdp-accent text-sm">News Coverage</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900 dark:text-wdp-text">Global</div>
-                      <div className="text-wdp-accent text-sm">Music Scene</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Category Header */}
         {category && (
           <section className="mb-8">
@@ -652,6 +552,74 @@ export default function Homepage() {
             </div>
           </div>
         </div>
+
+        {/* Hero Section - Moved to bottom, only show on homepage */}
+        {!category && (
+          <section className="mt-16 mb-8">
+            <div className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-wdp-surface dark:to-wdp-muted rounded-2xl p-8 md:p-12 text-gray-900 dark:text-wdp-text relative overflow-hidden border border-gray-200 dark:border-wdp-muted">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 bg-wdp-accent/10"></div>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-wdp-accent/20 rounded-full -translate-y-32 translate-x-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-wdp-accent/20 rounded-full translate-y-24 -translate-x-24"></div>
+              
+              <div className="relative z-10">
+                <div className="max-w-4xl">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-12 h-12 bg-wdp-accent/20 rounded-lg flex items-center justify-center">
+                      <Headphones size={24} className="text-wdp-accent" />
+                    </div>
+                    <span className="text-wdp-accent font-semibold">PREMIER ELECTRONIC MUSIC NEWS</span>
+                  </div>
+                  
+                  <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight text-gray-900 dark:text-wdp-text">
+                    WhereDJsPlay
+                    <span className="block text-3xl md:text-4xl text-wdp-accent font-normal mt-2">
+                      Your Ultimate Source for DJ & Electronic Music News
+                    </span>
+                  </h1>
+                  
+                  <p className="text-xl text-gray-700 dark:text-wdp-text/90 mb-8 leading-relaxed max-w-3xl">
+                    Stay ahead of the beat with breaking news, exclusive interviews, gear reviews, and industry insights from the global electronic music scene. From underground techno to mainstream EDM, we cover it all.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button className="bg-wdp-accent text-white px-8 py-3 rounded-lg font-bold hover:bg-wdp-accent-hover transition-all duration-200 flex items-center justify-center space-x-2">
+                      <span>Explore Latest News</span>
+                      <Zap size={20} />
+                    </button>
+                    <button 
+                      onClick={() => setShowNewsletterModal(true)}
+                      className="border-2 border-wdp-accent/30 text-wdp-accent px-8 py-3 rounded-lg font-bold hover:bg-wdp-accent/10 transition-all duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <span>Subscribe to Newsletter</span>
+                      <Star size={20} />
+                    </button>
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="flex flex-wrap gap-8 mt-8 pt-8 border-t border-gray-300 dark:border-wdp-muted">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-wdp-text">50K+</div>
+                      <div className="text-wdp-accent text-sm">Monthly Readers</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-wdp-text">1000+</div>
+                      <div className="text-wdp-accent text-sm">Articles Published</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-wdp-text">24/7</div>
+                      <div className="text-wdp-accent text-sm">News Coverage</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-wdp-text">Global</div>
+                      <div className="text-wdp-accent text-sm">Music Scene</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Footer */}

@@ -1,14 +1,61 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { getAssetPath } from '../lib/utils'
 
 export default function Footer() {
+  const [currentTheme, setCurrentTheme] = useState('dark')
+
+  // Get current theme from localStorage or default to dark
+  const getCurrentTheme = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') || 'dark'
+    }
+    return 'dark'
+  }
+
+  // Listen for theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      setCurrentTheme(getCurrentTheme())
+    }
+
+    // Set initial theme
+    updateTheme()
+
+    // Listen for storage changes (when theme is changed in header)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'theme') {
+        updateTheme()
+      }
+    }
+
+    // Listen for custom theme change event
+    const handleThemeChange = () => {
+      updateTheme()
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('themeChanged', handleThemeChange)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('themeChanged', handleThemeChange)
+    }
+  }, [])
+
+  // Get the appropriate logo based on theme
+  const getLogoPath = () => {
+    return currentTheme === 'dark'
+      ? getAssetPath('images/logos/wheredjsplay_logo.PNG')
+      : getAssetPath('images/logos/wheredjsplay_light_mode.png')
+  }
+
   return (
     <footer className="bg-wdp-surface dark:bg-gray-900 border-t border-gray-200 dark:border-wdp-muted mt-16">
       <div className="max-w-[1400px] mx-auto px-4 py-10 flex flex-col md:flex-row md:justify-between gap-8">
         {/* Left: Logo and Description */}
         <div className="flex-1 min-w-[220px] flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <img src={getAssetPath('images/logos/wheredjsplay_logo.png')} alt="WhereDJsPlay Logo" className="h-10 w-auto" />
+            <img src={getLogoPath()} alt="WhereDJsPlay Logo" className="h-20 w-auto" />
           </div>
           <p className="text-gray-600 dark:text-wdp-text/70 text-sm max-w-xs">
             Your ultimate source for DJ & electronic music news, events, and artist discovery. Powered by the global DJ community.

@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { UsersService, UploadService } from '../lib/api';
+import { toast } from 'sonner';
 
 interface UserFormData {
   name: string;
@@ -74,7 +75,7 @@ export default function UserEditor() {
       }
     } catch (error) {
       console.error('Error loading user:', error);
-      alert('Error loading user data');
+      toast.error('Error loading user data');
     } finally {
       setLoading(false);
     }
@@ -100,13 +101,13 @@ export default function UserEditor() {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+        toast.error('Please select an image file');
         return;
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image size must be less than 5MB');
+        toast.error('Image size must be less than 5MB');
         return;
       }
 
@@ -195,13 +196,13 @@ export default function UserEditor() {
       }
 
       if (response.data) {
-        alert(isEditing ? 'User updated successfully!' : 'User created successfully!');
+        toast.success(isEditing ? 'User updated successfully!' : 'User created successfully!');
         navigate('/admin/users');
       }
     } catch (error: any) {
       console.error('Error saving user:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Error saving user: ${errorMessage}`);
+      toast.error(`Error saving user: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

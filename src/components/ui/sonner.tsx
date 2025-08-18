@@ -1,12 +1,21 @@
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, ToasterProps } from "sonner"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  // Simple theme detection for Vite/React
+  const getTheme = () => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('admin-theme');
+      if (savedTheme) return savedTheme;
+      
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return systemPrefersDark ? 'dark' : 'light';
+    }
+    return 'light';
+  };
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={getTheme() as ToasterProps["theme"]}
       className="toaster group"
       style={
         {

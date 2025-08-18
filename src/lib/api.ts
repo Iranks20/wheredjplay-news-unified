@@ -1,6 +1,6 @@
 // API Configuration
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001',
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3
 };
@@ -248,8 +248,24 @@ export class ArticlesService {
     return apiClient.post(`/articles/${id}/feature`);
   }
 
+  static async toggleBreakingNews(id: string | number) {
+    return apiClient.post(`/articles/${id}/breaking-news`);
+  }
+
+  static async toggleLatestHeadline(id: string | number) {
+    return apiClient.post(`/articles/${id}/latest-headline`);
+  }
+
   static async getFeaturedArticles(limit?: number) {
     return apiClient.get<any[]>('/articles/featured', { limit });
+  }
+
+  static async getBreakingNews(limit?: number) {
+    return apiClient.get<any[]>('/articles/breaking-news', { limit });
+  }
+
+  static async getLatestHeadlines(limit?: number) {
+    return apiClient.get<any[]>('/articles/latest-headlines', { limit });
   }
 }
 

@@ -6,10 +6,6 @@ import {
   Calendar, 
   User, 
   Eye, 
-  Share2, 
-  Facebook, 
-  Twitter, 
-  Linkedin,
   ArrowLeft,
   Tag,
   Heart,
@@ -28,7 +24,6 @@ export default function ArticleDetail() {
   const { data: article, loading, error, execute } = useApi();
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
 
   useEffect(() => {
     if (slug) {
@@ -42,32 +37,6 @@ export default function ArticleDetail() {
       month: 'long',
       day: 'numeric'
     });
-  };
-
-  const handleShare = (platform: string) => {
-    const url = window.location.href;
-    const title = article?.title || '';
-    
-    let shareUrl = '';
-    switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
-        break;
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-        break;
-      case 'copy':
-        navigator.clipboard.writeText(url);
-        setShowShareMenu(false);
-        return;
-      default:
-        shareUrl = url;
-    }
-    
-    window.open(shareUrl, '_blank', 'width=600,height=400');
   };
 
   // Static data for sections without APIs
@@ -120,20 +89,7 @@ export default function ArticleDetail() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
         {/* Top Banner Ad for DJLink.me */}
-        <div className="bg-wdp-accent text-white p-3 text-center">
-          <div className="flex items-center justify-center space-x-2">
-            <span className="font-semibold">🎧 Create Your DJ Profile on</span>
-            <a 
-              href="https://djlink.me" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="font-bold underline hover:text-white/80 transition-colors"
-            >
-              DJLink.me
-            </a>
-            <span>→ Connect with venues worldwide</span>
-          </div>
-        </div>
+        
 
         <Components.Header />
 
@@ -157,20 +113,7 @@ export default function ArticleDetail() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
         {/* Top Banner Ad for DJLink.me */}
-        <div className="bg-wdp-accent text-white p-3 text-center">
-          <div className="flex items-center justify-center space-x-2">
-            <span className="font-semibold">🎧 Create Your DJ Profile on</span>
-            <a 
-              href="https://djlink.me" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="font-bold underline hover:text-white/80 transition-colors"
-            >
-              DJLink.me
-            </a>
-            <span>→ Connect with venues worldwide</span>
-          </div>
-        </div>
+        
 
         <Components.Header />
 
@@ -200,20 +143,7 @@ export default function ArticleDetail() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
       {/* Top Banner Ad for DJLink.me */}
-      <div className="bg-wdp-accent text-white p-3 text-center">
-        <div className="flex items-center justify-center space-x-2">
-          <span className="font-semibold">🎧 Create Your DJ Profile on</span>
-          <a 
-            href="https://djlink.me" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="font-bold underline hover:text-white/80 transition-colors"
-          >
-            DJLink.me
-          </a>
-          <span>→ Connect with venues worldwide</span>
-        </div>
-      </div>
+      
 
       {/* Header */}
       <Components.Header />
@@ -231,12 +161,22 @@ export default function ArticleDetail() {
 
             {/* Article Header */}
             <div className="mb-8">
-              <div className="flex items-center space-x-4 mb-4">
-                <span className="bg-wdp-accent text-white px-3 py-1 rounded-full text-sm font-semibold">
-                  {article.category_name}
-                </span>
-                <span className="text-gray-500 dark:text-wdp-text/60 text-sm">{formatDate(article.created_at)}</span>
-                <span className="text-gray-500 dark:text-wdp-text/60 text-sm">5 min read</span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <span className="bg-wdp-accent text-white px-3 py-1 rounded-full text-sm font-semibold">
+                    {article.category_name}
+                  </span>
+                  <span className="text-gray-500 dark:text-wdp-text/60 text-sm">{formatDate(article.created_at)}</span>
+                  <span className="text-gray-500 dark:text-wdp-text/60 text-sm">5 min read</span>
+                </div>
+                
+                <Components.SocialShare 
+                  url={window.location.href}
+                  title={article.title}
+                  description={article.excerpt || `Check out this article on WhereDJsPlay: ${article.title}`}
+                  image={ImageUploadService.getImageUrl(article.image)}
+                  className="sm:hidden"
+                />
               </div>
               
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-wdp-text mb-6 leading-tight">
@@ -317,41 +257,12 @@ export default function ArticleDetail() {
                 </button>
               </div>
               
-              <div className="relative">
-                <button
-                  onClick={() => setShowShareMenu(!showShareMenu)}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-wdp-surface text-gray-700 dark:text-wdp-text hover:bg-gray-200 dark:hover:bg-wdp-muted transition-colors"
-                >
-                  <Share2 size={16} />
-                  <span>Share</span>
-                </button>
-                
-                {showShareMenu && (
-                  <div className="absolute right-0 top-full mt-2 bg-white dark:bg-wdp-surface border border-gray-200 dark:border-wdp-muted rounded-lg shadow-lg p-2 z-10">
-                    <button
-                      onClick={() => handleShare('facebook')}
-                      className="flex items-center space-x-2 w-full px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-wdp-muted transition-colors"
-                    >
-                      <Facebook size={16} className="text-blue-500" />
-                      <span className="text-gray-900 dark:text-wdp-text">Facebook</span>
-                    </button>
-                    <button
-                      onClick={() => handleShare('twitter')}
-                      className="flex items-center space-x-2 w-full px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-wdp-muted transition-colors"
-                    >
-                      <Twitter size={16} className="text-blue-400" />
-                      <span className="text-gray-900 dark:text-wdp-text">Twitter</span>
-                    </button>
-                    <button
-                      onClick={() => handleShare('copy')}
-                      className="flex items-center space-x-2 w-full px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-wdp-muted transition-colors"
-                    >
-                      <Share2 size={16} className="text-wdp-accent" />
-                      <span className="text-gray-900 dark:text-wdp-text">Copy Link</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+              <Components.SocialShare 
+                url={window.location.href}
+                title={article.title}
+                description={article.excerpt || `Check out this article on WhereDJsPlay: ${article.title}`}
+                image={ImageUploadService.getImageUrl(article.image)}
+              />
             </div>
 
             {/* Related Articles */}

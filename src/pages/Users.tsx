@@ -21,6 +21,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useApiWithPagination } from '../hooks/useApi';
 import { UsersService } from '../lib/api';
+import { toast } from 'sonner';
 
 export default function Users() {
   const { data: usersData, loading, error, execute, pagination } = useApiWithPagination();
@@ -78,9 +79,10 @@ export default function Users() {
       // Refresh the users list
       await execute(() => UsersService.getUsers(filters));
       console.log('Users refreshed successfully');
+      toast.success('User status updated successfully');
     } catch (error) {
       console.error('Error updating user status:', error);
-      alert(`Error updating user status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Error updating user status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -94,11 +96,12 @@ export default function Users() {
       // Refresh the users list
       await execute(() => UsersService.getUsers(filters));
       console.log('Users refreshed successfully');
+      toast.success('User deleted successfully');
       setShowDeleteModal(null);
     } catch (error: any) {
       console.error('Error deleting user:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Error deleting user: ${errorMessage}`);
+      toast.error(`Error deleting user: ${errorMessage}`);
     }
   };
 

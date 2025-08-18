@@ -13,6 +13,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { CategoriesService } from '../lib/api';
+import { toast } from 'sonner';
 
 export default function Categories() {
   const { data: categories, loading, error, execute } = useApi();
@@ -48,11 +49,12 @@ export default function Categories() {
       // Refresh the categories list
       await execute(() => CategoriesService.getCategories());
       console.log('Categories refreshed successfully');
+      toast.success('Category deleted successfully');
       setShowDeleteModal(null);
     } catch (error: any) {
       console.error('Error deleting category:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Error deleting category: ${errorMessage}`);
+      toast.error(`Error deleting category: ${errorMessage}`);
     }
   };
 

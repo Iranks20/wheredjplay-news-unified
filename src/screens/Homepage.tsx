@@ -25,6 +25,7 @@ import NewsletterModal from '../components/NewsletterModal';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { getAssetPath } from '../lib/utils';
+import { ImageUploadService } from '../lib/uploadService';
 
 export default function Homepage() {
   const { category } = useParams();
@@ -32,6 +33,8 @@ export default function Homepage() {
 
   const { data: articlesData, loading, error, execute } = useApi();
   const { data: categories, loading: categoriesLoading, execute: fetchCategories } = useApi();
+  const { data: breakingNewsData, loading: breakingNewsLoading, execute: fetchBreakingNews } = useApi();
+  const { data: latestHeadlinesData, loading: latestHeadlinesLoading, execute: fetchLatestHeadlines } = useApi();
 
   useEffect(() => {
     // Fetch categories
@@ -44,10 +47,18 @@ export default function Homepage() {
       ...(category && { category })
     };
     execute(() => ArticlesService.getArticles(params));
-  }, [execute, fetchCategories, category]);
+
+    // Fetch breaking news and latest headlines only on homepage
+    if (!category) {
+      fetchBreakingNews(() => ArticlesService.getBreakingNews(6));
+      fetchLatestHeadlines(() => ArticlesService.getLatestHeadlines(8));
+    }
+  }, [execute, fetchCategories, fetchBreakingNews, fetchLatestHeadlines, category]);
 
   const articles = articlesData?.articles || [];
   const categoriesList = categories || [];
+  const breakingNews = breakingNewsData || [];
+  const latestHeadlines = latestHeadlinesData || [];
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -87,130 +98,6 @@ export default function Homepage() {
     { title: 'Dekmantel Festival 2025 Unveils Massive Lineup', category: 'Event Reports' },
     { title: 'Macon Drops Underground Hit \'Just Dance\' with Chacel', category: 'Artist News' },
     { title: 'Floating Points & Kerri Chandler Join Kappa FuturFestival 2025', category: 'Event Reports' }
-  ];
-
-  // Breaking news articles (static for now)
-  const breakingNews = [
-    {
-      id: 'breaking-1',
-      title: 'Dillon Plays to 3 People at Super Bowl Party',
-      excerpt: 'The electronic music producer\'s unexpected performance at a small Super Bowl gathering goes viral on social media.',
-      image: getAssetPath('images/articles/43.jpg'),
-      category: 'Artist News',
-      publishedAt: '2 hours ago',
-      status: 'BREAKING',
-      statusColor: 'red'
-    },
-    {
-      id: 'breaking-2',
-      title: 'ANYMA Sells Out Historic Vegas Sphere Residency',
-      excerpt: 'DJ promises to deliver his best show ever at the iconic Las Vegas venue, marking a milestone in electronic music history.',
-      image: getAssetPath('images/articles/img_0002.jpg'),
-      category: 'Event Reports',
-      publishedAt: '4 hours ago',
-      status: 'HOT',
-      statusColor: 'orange'
-    },
-    {
-      id: 'breaking-3',
-      title: 'Zedd Announces New Album "Telos"',
-      excerpt: 'Telos will be released on August 30th, marking the producer\'s highly anticipated return to the spotlight.',
-      image: getAssetPath('images/articles/38_d9az1XP.jpg'),
-      category: 'Artist News',
-      publishedAt: '6 hours ago',
-      status: 'NEW',
-      statusColor: 'blue'
-    },
-    {
-      id: 'breaking-4',
-      title: 'Diplo Makes History with Antarctic DJ Set',
-      excerpt: 'Watch the DJ perform amidst pristine landscapes of ice, creating a truly unique electronic music experience.',
-      image: getAssetPath('images/articles/img_0004.jpg'),
-      category: 'Event Reports',
-      publishedAt: '8 hours ago',
-      status: 'LIVE',
-      statusColor: 'green'
-    },
-    {
-      id: 'breaking-5',
-      title: 'Michael Bibi Unveils London Showcase on 2024 \'One Life\' Tour',
-      excerpt: 'DJ\'s homecoming is set to make capital\'s electronic history with an unforgettable performance.',
-      image: getAssetPath('images/articles/42_58nahwF.jpg'),
-      category: 'Artist News',
-      publishedAt: '10 hours ago',
-      status: 'EXCLUSIVE',
-      statusColor: 'purple'
-    },
-    {
-      id: 'breaking-6',
-      title: 'Carl Cox Epic Clapback to Brighton Resident DJ\'s Hilarious Response',
-      excerpt: 'Resident goes viral as the techno legend responds with his signature humor and style.',
-      image: getAssetPath('images/articles/37_wNdv100.jpg'),
-      category: 'Artist News',
-      publishedAt: '12 hours ago',
-      status: 'TRENDING',
-      statusColor: 'yellow'
-    }
-  ];
-
-  // Latest headlines (static for now)
-  const latestHeadlines = [
-    {
-      title: 'Electric Love Festival Reveals Lineup',
-      excerpt: 'Big Names Set to Headline in Austria for the annual electronic music celebration.',
-      category: 'Event Reports',
-      publishedAt: '1 day ago',
-      readTime: '5 min read'
-    },
-    {
-      title: 'Secret Garden Party: Empowering Grassroots Artists',
-      excerpt: 'UK Festival Champions New Music in 2024 with focus on emerging talent.',
-      category: 'Event Reports',
-      publishedAt: '1 day ago',
-      readTime: '4 min read'
-    },
-    {
-      title: 'Nathan Katz Drops New Parallax EP',
-      excerpt: 'All Day I Dream delivers Katz\'s latest melodic house experience with stunning production.',
-      category: 'Artist News',
-      publishedAt: '2 days ago',
-      readTime: '3 min read'
-    },
-    {
-      title: 'Unveiling Africa\'s DJ Talent',
-      excerpt: 'Meet 8 dynamic DJs shaping the music scene across the African continent.',
-      category: 'Artist News',
-      publishedAt: '2 days ago',
-      readTime: '6 min read'
-    },
-    {
-      title: 'Rain, Music and Surprises at Ultra Miami',
-      excerpt: 'A rollercoaster of beats and weather creates unforgettable festival memories.',
-      category: 'Event Reports',
-      publishedAt: '3 days ago',
-      readTime: '7 min read'
-    },
-    {
-      title: 'Ushuaïa Ibiza Unveils Stellar 2024 Residencies',
-      excerpt: 'Top-tier DJs dominate this summer\'s lineup at the iconic venue.',
-      category: 'Event Reports',
-      publishedAt: '3 days ago',
-      readTime: '5 min read'
-    },
-    {
-      title: 'James Trystan Takes Koh Phangan by Storm',
-      excerpt: 'Exclusive insights into his latest live set and future plans in Thailand.',
-      category: 'Artist News',
-      publishedAt: '4 days ago',
-      readTime: '4 min read'
-    },
-    {
-      title: 'Iconic Leeds Venue Sheaf St Shuts Down',
-      excerpt: 'A sad goodbye to six years of beats and bass as Sheaf St bows out due to costs and gentrification.',
-      category: 'Industry News',
-      publishedAt: '4 days ago',
-      readTime: '3 min read'
-    }
   ];
 
   if (loading && !articlesData) {
@@ -297,25 +184,57 @@ export default function Homepage() {
                     <span className="font-semibold">Latest Updates</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {breakingNews.map((article) => (
-                    <div key={article.id} className="bg-white dark:bg-wdp-surface rounded-xl p-0 shadow-md border border-gray-200 dark:border-wdp-muted overflow-hidden flex flex-col">
-                      <img src={article.image} alt={article.title} className="w-full h-40 object-cover" />
-                      <div className="p-6 flex-1 flex flex-col">
-                        <div className="flex items-center space-x-2 mb-3">
-                          <div className={`w-2 h-2 bg-${article.statusColor}-500 rounded-full animate-pulse`}></div>
-                          <span className={`text-xs font-semibold text-${article.statusColor}-600 dark:text-${article.statusColor}-400`}>{article.status}</span>
-                        </div>
-                        <h3 className="font-bold text-gray-900 dark:text-wdp-text mb-2">{article.title}</h3>
-                        <p className="text-gray-600 dark:text-wdp-text/70 text-sm mb-3">{article.excerpt}</p>
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-wdp-text/50 mt-auto">
-                          <span>{article.category}</span>
-                          <span>{article.publishedAt}</span>
+                {breakingNewsLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="bg-white dark:bg-wdp-surface rounded-xl p-0 shadow-md border border-gray-200 dark:border-wdp-muted overflow-hidden animate-pulse">
+                        <div className="w-full h-40 bg-gray-200 dark:bg-gray-700"></div>
+                        <div className="p-6">
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-3"></div>
+                          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-3"></div>
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                ) : breakingNews.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {breakingNews.map((article) => (
+                      <Link key={article.id} to={`/article/${article.id}`} className="group">
+                        <div className="bg-white dark:bg-wdp-surface rounded-xl p-0 shadow-md border border-gray-200 dark:border-wdp-muted overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300">
+                          <img 
+                            src={ImageUploadService.getImageUrl(article.image)} 
+                            alt={article.title} 
+                            className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300" 
+                          />
+                          <div className="p-6 flex-1 flex flex-col">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                              <span className="text-xs font-semibold text-red-600 dark:text-red-400">BREAKING</span>
+                            </div>
+                            <h3 className="font-bold text-gray-900 dark:text-wdp-text mb-2 group-hover:text-wdp-accent transition-colors">{article.title}</h3>
+                            <p className="text-gray-600 dark:text-wdp-text/70 text-sm mb-3">{article.excerpt}</p>
+                            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-wdp-text/50 mt-auto">
+                              <span>{article.category_name}</span>
+                              <span>{formatDate(article.created_at)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Zap size={24} className="text-gray-400" />
                     </div>
-                  ))}
-                </div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No breaking news</h3>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No breaking news articles available at the moment.
+                    </p>
+                  </div>
+                )}
               </section>
             )}
 
@@ -331,23 +250,47 @@ export default function Homepage() {
                     <span className="font-semibold">Recent Updates</span>
                   </div>
                 </div>
-                <div className="space-y-4">
-                  {latestHeadlines.map((headline, index) => (
-                    <div key={index} className="bg-white dark:bg-wdp-surface rounded-lg p-4 border border-gray-200 dark:border-wdp-muted hover:border-wdp-accent transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 dark:text-wdp-text mb-1">{headline.title}</h3>
-                          <p className="text-gray-600 dark:text-wdp-text/70 text-sm mb-2">{headline.excerpt}</p>
-                          <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-wdp-text/50">
-                            <span>{headline.category}</span>
-                            <span>{headline.publishedAt}</span>
-                            <span>• {headline.readTime}</span>
+                {latestHeadlinesLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(8)].map((_, i) => (
+                      <div key={i} className="bg-white dark:bg-wdp-surface rounded-lg p-4 border border-gray-200 dark:border-wdp-muted animate-pulse">
+                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : latestHeadlines.length > 0 ? (
+                  <div className="space-y-4">
+                    {latestHeadlines.map((headline) => (
+                      <Link key={headline.id} to={`/article/${headline.id}`} className="block">
+                        <div className="bg-white dark:bg-wdp-surface rounded-lg p-4 border border-gray-200 dark:border-wdp-muted hover:border-wdp-accent transition-colors group">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 dark:text-wdp-text mb-1 group-hover:text-wdp-accent transition-colors">{headline.title}</h3>
+                              <p className="text-gray-600 dark:text-wdp-text/70 text-sm mb-2">{headline.excerpt}</p>
+                              <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-wdp-text/50">
+                                <span>{headline.category_name}</span>
+                                <span>{formatDate(headline.created_at)}</span>
+                                <span>• 5 min read</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Clock size={24} className="text-gray-400" />
                     </div>
-                  ))}
-                </div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No latest headlines</h3>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No latest headline articles available at the moment.
+                    </p>
+                  </div>
+                )}
               </section>
             )}
 

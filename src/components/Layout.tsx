@@ -17,6 +17,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { Toaster } from './ui/sonner';
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -207,6 +208,9 @@ export default function Layout() {
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
+
+      {/* Toast Notifications */}
+      <Toaster />
     </div>
   );
 } 

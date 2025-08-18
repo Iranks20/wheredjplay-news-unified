@@ -14,12 +14,15 @@ import {
   User,
   Star,
   StarOff,
-  FileText
+  FileText,
+  Zap,
+  Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApi, useApiWithPagination } from '../hooks/useApi';
 import { ArticlesService, CategoriesService, UsersService } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function Articles() {
   const { data: articlesData, loading, error, execute, pagination } = useApiWithPagination();
@@ -50,16 +53,16 @@ export default function Articles() {
         console.log('Testing API connection...');
         
         // Test health endpoint
-        const healthResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/health`);
+        const healthResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/health`);
         console.log('API health check response:', healthResponse.status, healthResponse.ok);
         
         // Test articles endpoint without auth
-        const articlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`);
+        const articlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/api/v1/articles`);
         console.log('Articles endpoint response:', articlesResponse.status, articlesResponse.ok);
         
         // Test articles endpoint with auth
         if (token) {
-          const authArticlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`, {
+          const authArticlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/api/v1/articles`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -117,9 +120,11 @@ export default function Articles() {
       if (newStatus === 'published') {
         const response = await ArticlesService.publishArticle(articleId);
         console.log('Publish response:', response);
+        toast.success(response.message || 'Article published successfully');
       } else if (newStatus === 'draft') {
         const response = await ArticlesService.unpublishArticle(articleId);
         console.log('Unpublish response:', response);
+        toast.success(response.message || 'Article unpublished successfully');
       }
       
       // Refresh the articles list
@@ -127,7 +132,7 @@ export default function Articles() {
       console.log('Articles refreshed successfully');
     } catch (error) {
       console.error('Error updating article status:', error);
-      alert(`Error updating article status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Error updating article status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -137,13 +142,42 @@ export default function Articles() {
       
       const response = await ArticlesService.toggleFeatured(articleId);
       console.log('Toggle featured response:', response);
+      toast.success(response.message || 'Featured status updated successfully');
       
       // Refresh the articles list
       await execute(() => ArticlesService.getArticles(filters));
       console.log('Articles refreshed successfully');
     } catch (error) {
       console.error('Error toggling featured status:', error);
-      alert(`Error toggling featured status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Error toggling featured status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleBreakingNewsToggle = async (articleId: number) => {
+    try {
+      console.log('Toggling breaking news status for article:', articleId);
+      const response = await ArticlesService.toggleBreakingNews(articleId);
+      console.log('Toggle breaking news response:', response);
+      toast.success(response.message || 'Breaking news status updated successfully');
+      await execute(() => ArticlesService.getArticles(filters));
+      console.log('Articles refreshed successfully');
+    } catch (error) {
+      console.error('Error toggling breaking news status:', error);
+      toast.error(`Error toggling breaking news status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleLatestHeadlineToggle = async (articleId: number) => {
+    try {
+      console.log('Toggling latest headline status for article:', articleId);
+      const response = await ArticlesService.toggleLatestHeadline(articleId);
+      console.log('Toggle latest headline response:', response);
+      toast.success(response.message || 'Latest headline status updated successfully');
+      await execute(() => ArticlesService.getArticles(filters));
+      console.log('Articles refreshed successfully');
+    } catch (error) {
+      console.error('Error toggling latest headline status:', error);
+      toast.error(`Error toggling latest headline status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -154,13 +188,14 @@ export default function Articles() {
         
         const response = await ArticlesService.deleteArticle(articleId);
         console.log('Delete response:', response);
+        toast.success(response.message || 'Article deleted successfully');
         
         // Refresh the articles list
         await execute(() => ArticlesService.getArticles(filters));
         console.log('Articles refreshed successfully');
       } catch (error) {
         console.error('Error deleting article:', error);
-        alert(`Error deleting article: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        toast.error(`Error deleting article: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
   };
@@ -441,6 +476,14 @@ export default function Articles() {
                         {article.featured && (
                           <Star size={16} className="text-yellow-500" />
                         )}
+                        
+                        {article.is_breaking_news && (
+                          <Zap size={16} className="text-red-500" />
+                        )}
+                        
+                        {article.is_latest_headline && (
+                          <Clock size={16} className="text-blue-500" />
+                        )}
 
                         <div className="relative">
                           <button 
@@ -472,6 +515,28 @@ export default function Articles() {
                               >
                                 {article.featured ? <StarOff size={14} /> : <Star size={14} />}
                                 <span>{article.featured ? 'Unfeature' : 'Feature'}</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  handleBreakingNewsToggle(article.id);
+                                  closeDropdown();
+                                }}
+                                className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                {article.is_breaking_news ? <Zap size={14} /> : <Zap size={14} />}
+                                <span>{article.is_breaking_news ? 'Remove from Breaking News' : 'Add to Breaking News'}</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  handleLatestHeadlineToggle(article.id);
+                                  closeDropdown();
+                                }}
+                                className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                {article.is_latest_headline ? <Clock size={14} /> : <Clock size={14} />}
+                                <span>{article.is_latest_headline ? 'Remove from Latest Headlines' : 'Add to Latest Headlines'}</span>
                               </button>
                               
                               <button

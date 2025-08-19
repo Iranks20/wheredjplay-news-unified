@@ -30,6 +30,8 @@ export default function ArticleEditor() {
     category: '',
     author: '',
     image: '',
+    embeddedMedia: '',
+    mediaType: 'image',
     featured: false,
     status: 'draft',
     tags: '',
@@ -145,6 +147,8 @@ export default function ArticleEditor() {
         category_id: parseInt(formData.category),
         author_id: parseInt(formData.author),
         image: formData.image,
+        embedded_media: formData.embeddedMedia,
+        media_type: formData.mediaType,
         featured: formData.featured,
         status: status,
         tags: formData.tags.trim(),
@@ -183,9 +187,43 @@ export default function ArticleEditor() {
     }));
   };
 
+  // Handle media type change with mutual exclusivity
+  const handleMediaTypeChange = (newMediaType: string) => {
+    handleInputChange('mediaType', newMediaType);
+    
+    // Clear the other media when switching types
+    if (newMediaType === 'image') {
+      handleInputChange('embeddedMedia', '');
+    } else {
+      handleInputChange('image', '');
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+      }
+    }
+  };
+
+  // Handle embedded media input with mutual exclusivity
+  const handleEmbeddedMediaChange = (value: string) => {
+    handleInputChange('embeddedMedia', value);
+    
+    // Clear image when embedded media is provided
+    if (value && value.trim()) {
+      handleInputChange('image', '');
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+      }
+    }
+  };
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Clear embedded media when uploading image
+    handleInputChange('embeddedMedia', '');
+    handleInputChange('mediaType', 'image');
 
     // Validate file size (5MB limit)
     const maxSize = 5 * 1024 * 1024; // 5MB
@@ -294,6 +332,8 @@ export default function ArticleEditor() {
           category: article.category_id?.toString() || '',
           author: article.author_id?.toString() || '',
           image: article.image || '',
+          embeddedMedia: article.embedded_media || '',
+          mediaType: article.media_type || 'image',
           featured: article.featured || false,
           status: article.status || 'draft',
           tags: article.tags || '',
@@ -447,84 +487,192 @@ export default function ArticleEditor() {
             />
           </div>
 
-          {/* Featured Image */}
+          {/* Media Section */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Featured Image
+              Media Type
             </label>
             <div className="space-y-4">
-              {formData.image || imagePreview ? (
-                <div className="relative">
-                  <img
-                    src={imagePreview || formData.image}
-                    alt="Featured"
-                    className="w-full h-64 object-cover rounded-lg"
-                    onError={(e) => {
-                      console.error('Image failed to load:', imagePreview || formData.image);
-                      // Set a fallback image
-                      e.currentTarget.src = 'https://via.placeholder.com/800x400/e5e7eb/6b7280?text=Image+Not+Found';
-                    }}
-                    onLoad={() => {
-                      console.log('Image loaded successfully:', imagePreview || formData.image);
-                    }}
-                  />
+              {/* Media Type Selection */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { value: 'image', label: 'Image', icon: '🖼️' },
+                  { value: 'spotify', label: 'Spotify', icon: '🎵' },
+                  { value: 'youtube', label: 'YouTube', icon: '📺' },
+                  { value: 'soundcloud', label: 'SoundCloud', icon: '🎧' }
+                ].map((type) => (
                   <button
-                    onClick={() => {
-                      handleInputChange('image', '');
-                      if (imagePreview) {
-                        URL.revokeObjectURL(imagePreview);
-                        setImagePreview(null);
-                      }
-                    }}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    key={type.value}
+                    type="button"
+                    onClick={() => handleMediaTypeChange(type.value)}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      formData.mediaType === type.value
+                        ? 'border-admin-accent bg-admin-accent/10 text-admin-accent'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                    }`}
                   >
-                    <X size={16} />
+                    <div className="text-2xl mb-1">{type.icon}</div>
+                    <div className="text-sm font-medium">{type.label}</div>
                   </button>
-                  {imagePreview && imageUploading && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                      <div className="text-white text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-                        <p>Uploading...</p>
+                ))}
+              </div>
+
+              {/* Media Input */}
+              {formData.mediaType === 'image' ? (
+                <div className="space-y-4">
+                  {formData.image || imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview || formData.image}
+                        alt="Featured"
+                        className="w-full h-64 object-cover rounded-lg"
+                        onError={(e) => {
+                          console.error('Image failed to load:', imagePreview || formData.image);
+                          e.currentTarget.src = 'https://via.placeholder.com/800x400/e5e7eb/6b7280?text=Image+Not+Found';
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', imagePreview || formData.image);
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          handleInputChange('image', '');
+                          if (imagePreview) {
+                            URL.revokeObjectURL(imagePreview);
+                            setImagePreview(null);
+                          }
+                        }}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                      {imagePreview && imageUploading && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                          <div className="text-white text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                            <p>Uploading...</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+                      <ImageIcon size={48} className="mx-auto text-gray-400 mb-4" />
+                      <p className="text-gray-500 dark:text-gray-400 mb-2">Upload featured image</p>
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          disabled={imageUploading}
+                        />
+                        <span className={`inline-flex items-center space-x-2 px-4 py-2 bg-admin-accent text-white rounded-lg transition-colors ${imageUploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-admin-accent-hover cursor-pointer'}`}>
+                          {imageUploading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload size={16} />
+                              <span>Choose Image</span>
+                            </>
+                          )}
+                        </span>
+                      </label>
+                      {imageUploading && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                          Please wait while your image is being uploaded...
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Upload a featured image for your article. Recommended size: 1200x630px. Max file size: 5MB.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {formData.mediaType === 'spotify' ? 'Spotify Track URL' :
+                       formData.mediaType === 'youtube' ? 'YouTube Video URL' :
+                       'SoundCloud Track URL'}
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.embeddedMedia}
+                      onChange={(e) => handleEmbeddedMediaChange(e.target.value)}
+                      placeholder={
+                        formData.mediaType === 'spotify' ? 'https://open.spotify.com/track/...' :
+                        formData.mediaType === 'youtube' ? 'https://www.youtube.com/watch?v=...' :
+                        'https://soundcloud.com/artist/track-name'
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-admin-accent focus:border-transparent"
+                    />
+                  </div>
+                  
+                  {/* Media Preview */}
+                  {formData.embeddedMedia && (
+                    <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Preview
+                      </h4>
+                      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                        {formData.mediaType === 'spotify' && formData.embeddedMedia.includes('spotify.com') ? (
+                          <iframe 
+                            style={{borderRadius: '12px'}} 
+                            src={`https://open.spotify.com/embed/track/${formData.embeddedMedia.split('/track/')[1]?.split('?')[0]}`}
+                            width="100%" 
+                            height="152" 
+                            frameBorder="0" 
+                            allowFullScreen 
+                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                            loading="lazy"
+                          />
+                        ) : formData.mediaType === 'youtube' && formData.embeddedMedia.includes('youtube.com') ? (
+                          <iframe 
+                            width="100%" 
+                            height="200" 
+                            src={`https://www.youtube.com/embed/${formData.embeddedMedia.split('v=')[1]?.split('&')[0]}`}
+                            title="YouTube video player" 
+                            frameBorder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowFullScreen
+                          />
+                        ) : formData.mediaType === 'soundcloud' && formData.embeddedMedia.includes('soundcloud.com') ? (
+                          <iframe 
+                            width="100%" 
+                            height="166" 
+                            scrolling="no" 
+                            frameBorder="no" 
+                            allow="autoplay" 
+                            src={`https://w.soundcloud.com/player/?url=https://${formData.embeddedMedia.replace('https://', '').replace('http://', '')}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`}
+                          />
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {formData.mediaType === 'spotify' ? '🎵 Spotify track will be embedded here' :
+                               formData.mediaType === 'youtube' ? '📺 YouTube video will be embedded here' :
+                               '🎧 SoundCloud track will be embedded here'}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {formData.embeddedMedia}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
-                  <ImageIcon size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400 mb-2">Upload featured image</p>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      disabled={imageUploading}
-                    />
-                    <span className={`inline-flex items-center space-x-2 px-4 py-2 bg-admin-accent text-white rounded-lg transition-colors ${imageUploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-admin-accent-hover cursor-pointer'}`}>
-                      {imageUploading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          <span>Uploading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Upload size={16} />
-                          <span>Choose Image</span>
-                        </>
-                      )}
-                    </span>
-                  </label>
-                  {imageUploading && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                      Please wait while your image is being uploaded...
-                    </p>
-                  )}
+                  
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {formData.mediaType === 'spotify' ? 'Paste a Spotify track URL (e.g., https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh)' :
+                     formData.mediaType === 'youtube' ? 'Paste a YouTube video URL (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)' :
+                     'Paste a SoundCloud track URL (e.g., https://soundcloud.com/artist/track-name)'}
+                  </p>
                 </div>
               )}
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Upload a featured image for your article. Recommended size: 1200x630px. Max file size: 5MB.
-              </p>
             </div>
           </div>
 

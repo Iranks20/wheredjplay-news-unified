@@ -23,6 +23,7 @@ import { useApi, useApiWithPagination } from '../hooks/useApi';
 import { ArticlesService, CategoriesService, UsersService } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath } from '../utils/mediaUtils';
 
 export default function Articles() {
   const { data: articlesData, loading, error, execute, pagination } = useApiWithPagination();
@@ -43,6 +44,102 @@ export default function Articles() {
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Function to render media content for admin articles list
+  const renderArticleMedia = (article: any) => {
+    // Priority: embedded media over image
+    if (article.embedded_media && article.media_type !== 'image') {
+      switch (article.media_type) {
+        case 'spotify': {
+          const trackId = extractSpotifyTrackId(article.embedded_media);
+          if (!trackId) return null;
+          return (
+            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                style={{borderRadius: '8px'}} 
+                src={`https://open.spotify.com/embed/track/${trackId}`}
+                width="100%" 
+                height="80" 
+                frameBorder="0" 
+                allowFullScreen 
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                loading="lazy"
+                className="w-full h-full"
+              />
+            </div>
+          );
+        }
+        
+        case 'youtube': {
+          const videoId = extractYouTubeVideoId(article.embedded_media);
+          if (!videoId) return null;
+          return (
+            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="80" 
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title="YouTube video player" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          );
+        }
+        
+        case 'soundcloud': {
+          const trackPath = extractSoundCloudTrackPath(article.embedded_media);
+          console.log('🔍 Articles Admin SoundCloud - embedded_media:', article.embedded_media, 'trackPath:', trackPath);
+          if (!trackPath) return null;
+          const iframeSrc = `https://w.soundcloud.com/player/?url=https://${trackPath}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&buying=false&liking=false&download=false&sharing=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+          console.log('🔍 Articles Admin SoundCloud - iframeSrc:', iframeSrc);
+          return (
+            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="80" 
+                scrolling="no" 
+                frameBorder="no" 
+                allow="autoplay" 
+                src={iframeSrc}
+                className="w-full h-full"
+                onError={(e) => {
+                  console.error('SoundCloud iframe failed to load:', iframeSrc);
+                  console.error('Error event:', e);
+                }}
+                onLoad={() => {
+                  console.log('SoundCloud iframe loaded successfully:', iframeSrc);
+                }}
+              />
+            </div>
+          );
+        }
+        
+        default:
+          return null;
+      }
+    }
+
+    // Fallback to image if no embedded media
+    if (article.image) {
+      return (
+        <img 
+          src={article.image} 
+          alt={article.title}
+          className="w-full h-full object-cover"
+        />
+      );
+    }
+
+    // Fallback to placeholder
+    return (
+      <div className="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+        <FileText size={20} className="text-gray-400" />
+      </div>
+    );
+  };
+
   useEffect(() => {
     // Debug authentication state
     console.log('Auth state:', { isAuthenticated, token: token ? 'present' : 'missing', user });
@@ -53,16 +150,16 @@ export default function Articles() {
         console.log('Testing API connection...');
         
         // Test health endpoint
-        const healthResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/health`);
+        const healthResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/health`);
         console.log('API health check response:', healthResponse.status, healthResponse.ok);
         
         // Test articles endpoint without auth
-        const articlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/api/v1/articles`);
+        const articlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`);
         console.log('Articles endpoint response:', articlesResponse.status, articlesResponse.ok);
         
         // Test articles endpoint with auth
         if (token) {
-          const authArticlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/api/v1/articles`, {
+          const authArticlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -424,20 +521,10 @@ export default function Articles() {
             articles.map((article: any) => (
               <div key={article.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <div className="flex items-start space-x-4">
-                  {/* Article Image */}
+                  {/* Article Media */}
                   <div className="flex-shrink-0">
                     <div className="w-16 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
-                      {article.image ? (
-                        <img 
-                          src={article.image} 
-                          alt={article.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                          <FileText size={20} className="text-gray-400" />
-                        </div>
-                      )}
+                      {renderArticleMedia(article)}
                     </div>
                   </div>
 

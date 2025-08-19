@@ -24,7 +24,7 @@ npm run preview
 
 Set these environment variables in your Netlify dashboard:
 
-- `VITE_API_URL`: Your API server URL (e.g., `http://13.60.95.22:3001`)
+- `VITE_API_URL`: Your API server URL (e.g., `http://localhost:3001`)
 - `VITE_APP_NAME`: Application name (default: `WhereDJsPlay`)
 - `VITE_APP_VERSION`: Application version (default: `1.0.0`)
 
@@ -45,9 +45,9 @@ If the build fails:
 ## API Server
 
 The frontend connects to the WhereDJsPlay API server running on AWS EC2:
-- **API URL**: `http://13.60.95.22:3001`
-- **Health Check**: `http://13.60.95.22:3001/health`
-- **API Base**: `http://13.60.95.22:3001/api/v1`
+- **API URL**: `http://localhost:3001`
+- **Health Check**: `http://localhost:3001/health`
+- **API Base**: `http://localhost:3001/api/v1`
 
 ## Features
 

@@ -18,6 +18,7 @@ import { useApi } from '../hooks/useApi';
 import { ArticlesService } from '../lib/api';
 import { ImageUploadService } from '../lib/uploadService';
 import { getAssetPath } from '../lib/utils';
+import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath } from '../utils/mediaUtils';
 
 export default function ArticleDetail() {
   const { slug } = useParams();
@@ -84,6 +85,105 @@ export default function ArticleDetail() {
       publishedAt: '6 hours ago'
     }
   ];
+
+  // Function to render media content for article detail
+  const renderArticleDetailMedia = (article: any) => {
+    // Priority: embedded media over image
+    if (article.embedded_media && article.media_type !== 'image') {
+      switch (article.media_type) {
+        case 'spotify': {
+          const trackId = extractSpotifyTrackId(article.embedded_media);
+          if (!trackId) return null;
+          return (
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+              <iframe 
+                style={{borderRadius: '12px'}} 
+                src={`https://open.spotify.com/embed/track/${trackId}`}
+                width="100%" 
+                height="352" 
+                frameBorder="0" 
+                allowFullScreen 
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                loading="lazy"
+                className="w-full"
+              />
+            </div>
+          );
+        }
+        
+        case 'youtube': {
+          const videoId = extractYouTubeVideoId(article.embedded_media);
+          if (!videoId) return null;
+          return (
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+              <iframe 
+                width="100%" 
+                height="400" 
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title="YouTube video player" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+                className="w-full"
+              />
+            </div>
+          );
+        }
+        
+        case 'soundcloud': {
+          const trackPath = extractSoundCloudTrackPath(article.embedded_media);
+          console.log('🔍 ArticleDetail SoundCloud - embedded_media:', article.embedded_media, 'trackPath:', trackPath);
+          if (!trackPath) return null;
+          const iframeSrc = `https://w.soundcloud.com/player/?url=https://${trackPath}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&buying=false&liking=false&download=false&sharing=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+          console.log('🔍 ArticleDetail SoundCloud - iframeSrc:', iframeSrc);
+          return (
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+              <iframe 
+                width="100%" 
+                height="166" 
+                scrolling="no" 
+                frameBorder="no" 
+                allow="autoplay" 
+                src={iframeSrc}
+                className="w-full"
+                onError={(e) => {
+                  console.error('SoundCloud iframe failed to load:', iframeSrc);
+                  console.error('Error event:', e);
+                }}
+                onLoad={() => {
+                  console.log('SoundCloud iframe loaded successfully:', iframeSrc);
+                }}
+              />
+            </div>
+          );
+        }
+        
+        default:
+          return null;
+      }
+    }
+
+    // Fallback to image if no embedded media
+    if (article.image) {
+      return (
+        <img 
+          src={ImageUploadService.getImageUrl(article.image)} 
+          alt={article.title} 
+          className="w-full h-96 object-cover rounded-lg" 
+        />
+      );
+    }
+
+    // Fallback to placeholder
+    return (
+      <div className="w-full h-96 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          <div className="text-4xl mb-2">🎵</div>
+          <p className="text-sm">No media available</p>
+        </div>
+      </div>
+    );
+  };
 
   if (loading && !article) {
     return (
@@ -196,23 +296,10 @@ export default function ArticleDetail() {
               </div>
             </div>
 
-            {/* Featured Image */}
-            {article.image && (
-              <div className="mb-8">
-                <img 
-                  src={ImageUploadService.getImageUrl(article.image) || article.image} 
-                  alt={article.title}
-                  className="w-full h-96 object-cover rounded-xl"
-                  onError={() => {
-                    console.error('Failed to load article image:', article.image);
-                    console.error('Constructed URL:', ImageUploadService.getImageUrl(article.image));
-                  }}
-                  onLoad={() => {
-                    console.log('Article image loaded successfully:', article.image);
-                  }}
-                />
-              </div>
-            )}
+            {/* Featured Media */}
+            <div className="mb-8">
+              {renderArticleDetailMedia(article)}
+            </div>
 
             {/* Article Content */}
             <div className="prose prose-lg max-w-none text-gray-900 dark:text-wdp-text">

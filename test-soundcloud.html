@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundCloud URL Test</title>
+</head>
+<body>
+    <h1>SoundCloud URL Extraction Test</h1>
+    <div id="results"></div>
+
+    <script>
+        // Copy of the SoundCloud extraction function
+        function extractSoundCloudTrackPath(url) {
+            if (!url) return null;
+            
+            console.log('🔍 SoundCloud extraction - Input URL:', url);
+            
+            // Handle various SoundCloud URL formats
+            const patterns = [
+                /soundcloud\.com\/([^\/\?]+)\/([^\/\?]+)/,  // artist/track format like "forss/flickermood"
+                /soundcloud\.com\/([^\/\?]+)/                 // just artist format
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) {
+                    const result = match[0].replace('https://', '').replace('http://', '');
+                    console.log('🔍 SoundCloud extraction - Match found:', match[0], 'Result:', result);
+                    return result;
+                }
+            }
+            
+            // Try alternative approach - extract just the path part
+            try {
+                const urlObj = new URL(url);
+                if (urlObj.hostname.includes('soundcloud.com')) {
+                    const path = urlObj.pathname;
+                    console.log('🔍 SoundCloud extraction - Using URL path:', path);
+                    return path.substring(1); // Remove leading slash
+                }
+            } catch (error) {
+                console.log('🔍 SoundCloud extraction - URL parsing failed:', error);
+            }
+            
+            console.log('🔍 SoundCloud extraction - No match found for URL:', url);
+            return null;
+        }
+
+        // Test URLs
+        const testUrls = [
+            'https://soundcloud.com/forss/flickermood',
+            'https://soundcloud.com/artist/track-name',
+            'https://soundcloud.com/artist',
+            'http://soundcloud.com/forss/flickermood',
+            'https://www.soundcloud.com/forss/flickermood'
+        ];
+
+        const resultsDiv = document.getElementById('results');
+        
+        testUrls.forEach(url => {
+            const result = extractSoundCloudTrackPath(url);
+            const iframeSrc = `https://w.soundcloud.com/player/?url=https://${result}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&buying=false&liking=false&download=false&sharing=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+            
+            const div = document.createElement('div');
+            div.style.margin = '20px 0';
+            div.style.padding = '10px';
+            div.style.border = '1px solid #ccc';
+            div.innerHTML = `
+                <h3>Test URL: ${url}</h3>
+                <p><strong>Extracted Path:</strong> ${result}</p>
+                <p><strong>Iframe URL:</strong> ${iframeSrc}</p>
+                <div style="margin-top: 10px;">
+                    <iframe 
+                        width="100%" 
+                        height="166" 
+                        scrolling="no" 
+                        frameborder="no" 
+                        allow="autoplay" 
+                        src="${iframeSrc}">
+                    </iframe>
+                </div>
+            `;
+            resultsDiv.appendChild(div);
+        });
+    </script>
+</body>
+</html>

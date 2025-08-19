@@ -26,6 +26,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { getAssetPath } from '../lib/utils';
 import { ImageUploadService } from '../lib/uploadService';
+import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath } from '../utils/mediaUtils';
 
 export default function Homepage() {
   const { category } = useParams();
@@ -90,6 +91,105 @@ export default function Homepage() {
     { title: '30 Years of the CDJ: Transforming DJ Culture', views: '12K', category: 'Gear & Tech' },
     { title: 'John Digweed Hospitalised, Cancels Shows', views: '10K', category: 'Industry News' }
   ];
+
+  // Function to render media content for breaking news
+  const renderBreakingNewsMedia = (article: any) => {
+    // Priority: embedded media over image
+    if (article.embedded_media && article.media_type !== 'image') {
+      switch (article.media_type) {
+        case 'spotify': {
+          const trackId = extractSpotifyTrackId(article.embedded_media);
+          if (!trackId) return null;
+          return (
+            <div className="w-full h-40 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                style={{borderRadius: '8px'}} 
+                src={`https://open.spotify.com/embed/track/${trackId}`}
+                width="100%" 
+                height="120" 
+                frameBorder="0" 
+                allowFullScreen 
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                loading="lazy"
+                className="w-full h-full"
+              />
+            </div>
+          );
+        }
+        
+        case 'youtube': {
+          const videoId = extractYouTubeVideoId(article.embedded_media);
+          if (!videoId) return null;
+          return (
+            <div className="w-full h-40 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="120" 
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title="YouTube video player" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          );
+        }
+        
+        case 'soundcloud': {
+          const trackPath = extractSoundCloudTrackPath(article.embedded_media);
+          console.log('🔍 Homepage SoundCloud - embedded_media:', article.embedded_media, 'trackPath:', trackPath);
+          if (!trackPath) return null;
+          const iframeSrc = `https://w.soundcloud.com/player/?url=https://${trackPath}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&buying=false&liking=false&download=false&sharing=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+          console.log('🔍 Homepage SoundCloud - iframeSrc:', iframeSrc);
+          return (
+            <div className="w-full h-40 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="120" 
+                scrolling="no" 
+                frameBorder="no" 
+                allow="autoplay" 
+                src={iframeSrc}
+                className="w-full h-full"
+                onError={(e) => {
+                  console.error('SoundCloud iframe failed to load:', iframeSrc);
+                  console.error('Error event:', e);
+                }}
+                onLoad={() => {
+                  console.log('SoundCloud iframe loaded successfully:', iframeSrc);
+                }}
+              />
+            </div>
+          );
+        }
+        
+        default:
+          return null;
+      }
+    }
+
+    // Fallback to image if no embedded media
+    if (article.image) {
+      return (
+        <img 
+          src={ImageUploadService.getImageUrl(article.image)} 
+          alt={article.title} 
+          className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300" 
+        />
+      );
+    }
+
+    // Fallback to placeholder
+    return (
+      <div className="w-full h-40 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          <div className="text-2xl mb-1">🎵</div>
+          <p className="text-xs">Media Preview</p>
+        </div>
+      </div>
+    );
+  };
 
   const editorsPicks = [
     { title: 'Aphex Twin & Supreme Drop New Collection Spring/Summer 2025', category: 'Artist News' },
@@ -163,6 +263,8 @@ export default function Homepage() {
                   title={articles[0].title}
                   excerpt={articles[0].excerpt}
                   image={articles[0].image}
+                  embeddedMedia={articles[0].embedded_media}
+                  mediaType={articles[0].media_type}
                   category={articles[0].category_name}
                   author={articles[0].author_name}
                   publishedAt={formatDate(articles[0].created_at)}
@@ -201,13 +303,9 @@ export default function Homepage() {
                 ) : breakingNews.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {breakingNews.map((article) => (
-                      <Link key={article.id} to={`/article/${article.id}`} className="group">
-                        <div className="bg-white dark:bg-wdp-surface rounded-xl p-0 shadow-md border border-gray-200 dark:border-wdp-muted overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300">
-                          <img 
-                            src={ImageUploadService.getImageUrl(article.image)} 
-                            alt={article.title} 
-                            className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300" 
-                          />
+                                              <Link key={article.id} to={`/article/${article.id}`} className="group">
+                          <div className="bg-white dark:bg-wdp-surface rounded-xl p-0 shadow-md border border-gray-200 dark:border-wdp-muted overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300">
+                            {renderBreakingNewsMedia(article)}
                           <div className="p-6 flex-1 flex flex-col">
                             <div className="flex items-center space-x-2 mb-3">
                               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -316,6 +414,8 @@ export default function Homepage() {
                       title={article.title}
                       excerpt={article.excerpt}
                       image={article.image}
+                      embeddedMedia={article.embedded_media}
+                      mediaType={article.media_type}
                       category={article.category_name}
                       author={article.author_name}
                       publishedAt={formatDate(article.created_at)}

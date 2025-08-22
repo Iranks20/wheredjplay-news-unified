@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { X, Mail, Star } from 'lucide-react'
+import { SubscribersService } from '../lib/api'
 
 interface NewsletterModalProps {
   isOpen: boolean
@@ -10,7 +11,10 @@ interface NewsletterModalProps {
 
 export default function NewsletterModal({ isOpen, onClose }: NewsletterModalProps) {
   const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (isOpen) {
@@ -24,15 +28,32 @@ export default function NewsletterModal({ isOpen, onClose }: NewsletterModalProp
     }
   }, [isOpen])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (email) {
-      setIsSubmitted(true)
-      setTimeout(() => {
-        onClose()
-        setIsSubmitted(false)
-        setEmail('')
-      }, 2000)
+    if (!email) return
+
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const response = await SubscribersService.subscribe(email, name || undefined)
+      
+      if (!response.error) {
+        setIsSubmitted(true)
+        setTimeout(() => {
+          onClose()
+          setIsSubmitted(false)
+          setEmail('')
+          setName('')
+        }, 3000)
+      } else {
+        setError(response.message || 'Failed to subscribe. Please try again.')
+      }
+    } catch (error: any) {
+      console.error('Newsletter subscription error:', error)
+      setError(error.message || 'Failed to subscribe. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -86,19 +107,37 @@ export default function NewsletterModal({ isOpen, onClose }: NewsletterModalProp
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name (optional)"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-wdp-muted rounded-lg focus:ring-2 focus:ring-wdp-accent focus:border-transparent dark:bg-wdp-muted dark:text-wdp-text transition-colors"
+                  />
+                </div>
+                <div>
+                  <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email address"
                     className="w-full px-4 py-3 border border-gray-300 dark:border-wdp-muted rounded-lg focus:ring-2 focus:ring-wdp-accent focus:border-transparent dark:bg-wdp-muted dark:text-wdp-text transition-colors"
                     required
+                    disabled={isLoading}
                   />
                 </div>
+                
+                {error && (
+                  <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                    {error}
+                  </div>
+                )}
+                
                 <button
                   type="submit"
-                  className="w-full bg-wdp-accent text-white py-3 px-6 rounded-lg font-semibold hover:bg-wdp-accent-hover transition-all duration-200 transform hover:scale-105"
+                  disabled={isLoading}
+                  className="w-full bg-wdp-accent text-white py-3 px-6 rounded-lg font-semibold hover:bg-wdp-accent-hover transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  Subscribe Now
+                  {isLoading ? 'Subscribing...' : 'Subscribe Now'}
                 </button>
               </form>
 
@@ -116,6 +155,9 @@ export default function NewsletterModal({ isOpen, onClose }: NewsletterModalProp
               </h2>
               <p className="text-gray-600 dark:text-wdp-text/80">
                 You're now subscribed to our newsletter. Check your inbox for the latest updates!
+              </p>
+              <p className="text-sm text-gray-500 dark:text-wdp-text/60 mt-2">
+                We'll send you the hottest electronic music news and exclusive content.
               </p>
             </div>
           )}

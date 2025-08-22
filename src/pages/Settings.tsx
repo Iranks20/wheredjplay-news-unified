@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { 
   Settings as SettingsIcon,
   Globe,
@@ -10,10 +12,27 @@ import {
   Database,
   Save
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function Settings() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('general')
   const [isSaving, setIsSaving] = useState(false)
+
+  // Check if user has permission to access settings
+  useEffect(() => {
+    if (user && user.role === 'writer') {
+      toast.error('Access denied. Writers cannot access settings.')
+      navigate('/admin/dashboard')
+      return
+    }
+  }, [user, navigate])
+
+  // If user is a writer, don't render the component
+  if (user?.role === 'writer') {
+    return null
+  }
 
   const [settings, setSettings] = useState({
     siteName: 'WhereDJsPlay',

@@ -85,9 +85,53 @@ export function extractSoundCloudTrackPath(url: string): string | null {
 }
 
 /**
+ * Extract Beatport track ID from URL
+ */
+export function extractBeatportTrackId(url: string): string | null {
+  if (!url) return null;
+  
+  console.log('🔍 Beatport extraction - Input URL:', url);
+  
+  // Handle various Beatport URL formats
+  const patterns = [
+    /beatport\.com\/track\/([^\/\?]+)\/(\d+)/,  // track-name/id format
+    /beatport\.com\/track\/(\d+)/,               // just id format
+    /beatport\.com\/.*\/track\/(\d+)/            // any path with track id
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) {
+      const trackId = match[match.length - 1]; // Get the last match (track ID)
+      console.log('🔍 Beatport extraction - Match found:', match[0], 'Track ID:', trackId);
+      return trackId;
+    }
+  }
+  
+  // Try alternative approach - extract from URL path
+  try {
+    const urlObj = new URL(url);
+    if (urlObj.hostname.includes('beatport.com')) {
+      const pathParts = urlObj.pathname.split('/');
+      const trackIndex = pathParts.findIndex(part => part === 'track');
+      if (trackIndex !== -1 && pathParts[trackIndex + 1]) {
+        const trackId = pathParts[trackIndex + 1];
+        console.log('🔍 Beatport extraction - Using URL path, Track ID:', trackId);
+        return trackId;
+      }
+    }
+  } catch (error) {
+    console.log('🔍 Beatport extraction - URL parsing failed:', error);
+  }
+  
+  console.log('🔍 Beatport extraction - No match found for URL:', url);
+  return null;
+}
+
+/**
  * Detect media type from URL
  */
-export function detectMediaType(url: string): 'image' | 'spotify' | 'youtube' | 'soundcloud' | null {
+export function detectMediaType(url: string): 'image' | 'spotify' | 'youtube' | 'soundcloud' | 'beatport' | null {
   if (!url) return null;
   
   if (url.includes('spotify.com') || url.includes('open.spotify.com')) {
@@ -100,6 +144,10 @@ export function detectMediaType(url: string): 'image' | 'spotify' | 'youtube' | 
   
   if (url.includes('soundcloud.com')) {
     return 'soundcloud';
+  }
+  
+  if (url.includes('beatport.com')) {
+    return 'beatport';
   }
   
   // Check if it's an image URL
@@ -162,6 +210,20 @@ export function generateEmbedHtml(url: string, mediaType: string): string {
       </iframe>`;
     }
     
+    case 'beatport': {
+      const trackId = extractBeatportTrackId(url);
+      if (!trackId) return '';
+      
+      return `<iframe 
+        width="100%" 
+        height="166" 
+        scrolling="no" 
+        frameborder="no" 
+        allow="autoplay" 
+        src="https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0">
+      </iframe>`;
+    }
+    
     default:
       return '';
   }
@@ -202,6 +264,14 @@ export function validateMediaUrl(url: string, mediaType: string): { isValid: boo
       const trackPath = extractSoundCloudTrackPath(url);
       if (!trackPath) {
         return { isValid: false, error: 'Invalid SoundCloud URL. Please use a track URL like https://soundcloud.com/artist/track-name' };
+      }
+      break;
+    }
+    
+    case 'beatport': {
+      const trackId = extractBeatportTrackId(url);
+      if (!trackId) {
+        return { isValid: false, error: 'Invalid Beatport URL. Please use a track URL like https://www.beatport.com/track/track-name/id' };
       }
       break;
     }

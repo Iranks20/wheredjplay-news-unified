@@ -14,7 +14,8 @@ import {
   Search,
   Sun,
   Moon,
-  Plus
+  Plus,
+  Mail
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Toaster } from './ui/sonner';
@@ -63,7 +64,9 @@ export default function Layout() {
     { name: 'Articles', href: '/admin/articles', icon: FileText },
     { name: 'Categories', href: '/admin/categories', icon: FileText },
     { name: 'Users', href: '/admin/users', icon: Users },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
+    { name: 'Subscribers', href: '/admin/subscribers', icon: Mail },
+    // Only show Settings for non-writer roles
+    ...(user?.role !== 'writer' ? [{ name: 'Settings', href: '/admin/settings', icon: Settings }] : []),
   ];
 
   const isActive = (href: string) => {

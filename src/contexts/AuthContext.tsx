@@ -5,7 +5,7 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'editor' | 'author';
+  role: 'admin' | 'editor' | 'author' | 'writer';
   status: 'active' | 'inactive';
   created_at: string;
   last_login?: string;

@@ -3,7 +3,7 @@
 import { Clock, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ImageUploadService } from '../lib/uploadService'
-import { generateEmbedHtml, extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath } from '../utils/mediaUtils'
+import { generateEmbedHtml, extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath, extractBeatportTrackId } from '../utils/mediaUtils'
 
 interface NewsCardProps {
   id: string
@@ -11,7 +11,7 @@ interface NewsCardProps {
   excerpt: string
   image: string
   embeddedMedia?: string
-  mediaType?: 'image' | 'spotify' | 'youtube' | 'soundcloud'
+  mediaType?: 'image' | 'spotify' | 'youtube' | 'soundcloud' | 'beatport'
   category: string
   author: string
   publishedAt: string
@@ -120,6 +120,34 @@ export default function NewsCard({
                 }}
                 onLoad={() => {
                   console.log('SoundCloud iframe loaded successfully:', iframeSrc);
+                }}
+              />
+            </div>
+          );
+        }
+        
+        case 'beatport': {
+          const trackId = extractBeatportTrackId(embeddedMedia);
+          console.log('🔍 NewsCard Beatport - embeddedMedia:', embeddedMedia, 'trackId:', trackId);
+          if (!trackId) return null;
+          const iframeSrc = `https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+          console.log('🔍 NewsCard Beatport - iframeSrc:', iframeSrc);
+          return (
+            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="166" 
+                scrolling="no" 
+                frameBorder="no" 
+                allow="autoplay" 
+                src={iframeSrc}
+                className="w-full h-full"
+                onError={(e) => {
+                  console.error('Beatport iframe failed to load:', iframeSrc);
+                  console.error('Error event:', e);
+                }}
+                onLoad={() => {
+                  console.log('Beatport iframe loaded successfully:', iframeSrc);
                 }}
               />
             </div>

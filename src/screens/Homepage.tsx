@@ -26,7 +26,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { getAssetPath } from '../lib/utils';
 import { ImageUploadService } from '../lib/uploadService';
-import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath } from '../utils/mediaUtils';
+import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath, extractBeatportTrackId } from '../utils/mediaUtils';
+import NewsletterSubscription from '../components/NewsletterSubscription';
 
 export default function Homepage() {
   const { category } = useParams();
@@ -158,6 +159,34 @@ export default function Homepage() {
                 }}
                 onLoad={() => {
                   console.log('SoundCloud iframe loaded successfully:', iframeSrc);
+                }}
+              />
+            </div>
+          );
+        }
+        
+        case 'beatport': {
+          const trackId = extractBeatportTrackId(article.embedded_media);
+          console.log('🔍 Homepage Beatport - embedded_media:', article.embedded_media, 'trackId:', trackId);
+          if (!trackId) return null;
+          const iframeSrc = `https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+          console.log('🔍 Homepage Beatport - iframeSrc:', iframeSrc);
+          return (
+            <div className="w-full h-40 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="120" 
+                scrolling="no" 
+                frameBorder="no" 
+                allow="autoplay" 
+                src={iframeSrc}
+                className="w-full h-full"
+                onError={(e) => {
+                  console.error('Beatport iframe failed to load:', iframeSrc);
+                  console.error('Error event:', e);
+                }}
+                onLoad={() => {
+                  console.log('Beatport iframe loaded successfully:', iframeSrc);
                 }}
               />
             </div>
@@ -663,10 +692,25 @@ export default function Homepage() {
             </div>
           </section>
         )}
-      </main>
 
-      {/* Footer */}
-      <Footer />
+        {/* Newsletter Section */}
+        <section className="py-16 bg-gradient-to-r from-wdp-accent/5 to-purple-500/5">
+          <div className="max-w-[1400px] mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-wdp-text mb-4">
+                Stay Updated with the Latest News
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-wdp-text/80 max-w-2xl mx-auto">
+                Get weekly updates on the latest electronic music news, artist interviews, and industry insights delivered directly to your inbox.
+              </p>
+            </div>
+            <NewsletterSubscription variant="inline" className="max-w-2xl mx-auto" />
+          </div>
+        </section>
+
+        {/* Footer */}
+        <Footer />
+      </main>
 
       {/* Newsletter Modal */}
       {showNewsletterModal && (

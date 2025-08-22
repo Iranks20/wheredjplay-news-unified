@@ -37,6 +37,7 @@ function App() {
                 <Route path="users" element={<Pages.Users />} />
                 <Route path="users/new" element={<Pages.UserEditor />} />
                 <Route path="users/edit/:id" element={<Pages.UserEditor />} />
+                <Route path="subscribers" element={<Pages.Subscribers />} />
                 <Route path="settings" element={<Pages.Settings />} />
               </Route>
             </Route>

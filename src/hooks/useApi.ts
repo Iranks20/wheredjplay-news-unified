@@ -76,6 +76,7 @@ export function useApiWithPagination<T = any>() {
     
     try {
       const response = await apiCall();
+      
       setState({
         data: response.data,
         loading: false,

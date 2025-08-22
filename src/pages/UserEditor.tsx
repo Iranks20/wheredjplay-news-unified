@@ -22,7 +22,7 @@ interface UserFormData {
   email: string;
   password: string;
   confirmPassword: string;
-  role: 'admin' | 'editor' | 'author';
+  role: 'admin' | 'editor' | 'author' | 'writer';
   status: 'active' | 'inactive';
   avatar?: string;
 }
@@ -437,6 +437,7 @@ export default function UserEditor() {
               <option value="author">Author</option>
               <option value="editor">Editor</option>
               <option value="admin">Admin</option>
+              <option value="writer">Writer</option>
             </select>
             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
               <div className="flex items-center space-x-2">
@@ -445,6 +446,7 @@ export default function UserEditor() {
                   {formData.role === 'admin' && 'Full access to all features and user management'}
                   {formData.role === 'editor' && 'Can edit and publish articles, manage categories'}
                   {formData.role === 'author' && 'Can create and edit their own articles'}
+                  {formData.role === 'writer' && 'Can write and submit articles for review'}
                 </span>
               </div>
             </div>

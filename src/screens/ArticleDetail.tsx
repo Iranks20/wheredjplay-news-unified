@@ -18,7 +18,7 @@ import { useApi } from '../hooks/useApi';
 import { ArticlesService } from '../lib/api';
 import { ImageUploadService } from '../lib/uploadService';
 import { getAssetPath } from '../lib/utils';
-import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath } from '../utils/mediaUtils';
+import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath, extractBeatportTrackId } from '../utils/mediaUtils';
 
 export default function ArticleDetail() {
   const { slug } = useParams();
@@ -152,6 +152,34 @@ export default function ArticleDetail() {
                 }}
                 onLoad={() => {
                   console.log('SoundCloud iframe loaded successfully:', iframeSrc);
+                }}
+              />
+            </div>
+          );
+        }
+        
+        case 'beatport': {
+          const trackId = extractBeatportTrackId(article.embedded_media);
+          console.log('🔍 ArticleDetail Beatport - embedded_media:', article.embedded_media, 'trackId:', trackId);
+          if (!trackId) return null;
+          const iframeSrc = `https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+          console.log('🔍 ArticleDetail Beatport - iframeSrc:', iframeSrc);
+          return (
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+              <iframe 
+                width="100%" 
+                height="166" 
+                scrolling="no" 
+                frameBorder="no" 
+                allow="autoplay" 
+                src={iframeSrc}
+                className="w-full"
+                onError={(e) => {
+                  console.error('Beatport iframe failed to load:', iframeSrc);
+                  console.error('Error event:', e);
+                }}
+                onLoad={() => {
+                  console.log('Beatport iframe loaded successfully:', iframeSrc);
                 }}
               />
             </div>

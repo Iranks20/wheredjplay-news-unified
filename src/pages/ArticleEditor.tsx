@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Save, 
   Eye, 
@@ -10,17 +11,21 @@ import {
   X,
   Settings,
   Globe,
-  Tag
+  Tag,
+  Send,
+  Clock
 } from 'lucide-react'
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { ArticlesService, CategoriesService, UsersService } from '../lib/api';
 import { ImageUploadService } from '../lib/uploadService';
+import { extractBeatportTrackId } from '../utils/mediaUtils';
 
 export default function ArticleEditor() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const isEditing = id !== 'new'
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth(); // Get current user
+  const isEditing = !!id;
   const quillRef = useRef<ReactQuill>(null);
   
   const [formData, setFormData] = useState({
@@ -130,8 +135,26 @@ export default function ArticleEditor() {
     return true;
   };
 
+  // Validate schedule date
+  const validateScheduleDate = () => {
+    if (!formData.publishDate) {
+      setError('Please select a publish date for scheduling');
+      return false;
+    }
+    
+    const selectedDate = new Date(formData.publishDate);
+    const now = new Date();
+    
+    if (selectedDate <= now) {
+      setError('Publish date must be in the future for scheduling');
+      return false;
+    }
+    
+    return true;
+  };
+
   // Simple save function
-  const handleSave = async (status: 'draft' | 'published') => {
+  const handleSave = async (status: 'draft' | 'published' | 'pending') => {
     if (!validateForm()) {
       return;
     }
@@ -174,6 +197,55 @@ export default function ArticleEditor() {
       
     } catch (err: any) {
       setError('Error saving article: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Schedule function
+  const handleSchedule = async () => {
+    if (!validateForm() || !validateScheduleDate()) {
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    
+    try {
+      const articleData = {
+        title: formData.title.trim(),
+        excerpt: formData.excerpt.trim(),
+        content: formData.content,
+        category_id: parseInt(formData.category),
+        author_id: parseInt(formData.author),
+        image: formData.image,
+        embedded_media: formData.embeddedMedia,
+        media_type: formData.mediaType,
+        featured: formData.featured,
+        status: 'draft', // Keep as draft until scheduled time
+        tags: formData.tags.trim(),
+        seo_title: formData.seoTitle.trim(),
+        seo_description: formData.seoDescription.trim(),
+        publish_date: formData.publishDate
+      };
+      
+      let response;
+      if (isEditing && id) {
+        response = await ArticlesService.updateArticle(id, articleData);
+      } else {
+        response = await ArticlesService.createArticle(articleData);
+      }
+      
+      if (response.error) {
+        throw new Error(response.message || 'Failed to schedule article');
+      }
+      
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000);
+      navigate('/admin/articles');
+      
+    } catch (err: any) {
+      setError('Error scheduling article: ' + (err.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
     }
@@ -303,10 +375,16 @@ export default function ArticleEditor() {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const response = await UsersService.getUsers({ role: 'author' });
-        const usersData = response.data?.users || [];
-        const authors = Array.isArray(usersData) ? usersData : [];
-        setUsers(authors);
+        // Only load all authors if user is admin
+        if (user?.role === 'admin') {
+          const response = await UsersService.getAuthors();
+          const usersData = response.data?.users || [];
+          const authors = Array.isArray(usersData) ? usersData : [];
+          setUsers(authors);
+        } else {
+          // For non-admin users, only show themselves
+          setUsers([user]);
+        }
       } catch (err: any) {
         console.error('Error loading authors:', err);
         setError('Error loading authors: ' + err.message);
@@ -317,7 +395,17 @@ export default function ArticleEditor() {
 
     loadCategories();
     loadUsers();
-  }, []);
+  }, [user]);
+
+  // Set current user as default author for non-admin users
+  useEffect(() => {
+    if (user && !isEditing && user.role !== 'admin') {
+      setFormData(prev => ({
+        ...prev,
+        author: user.id.toString()
+      }));
+    }
+  }, [user, isEditing]);
 
   // Load article data if editing
   useEffect(() => {
@@ -399,15 +487,40 @@ export default function ArticleEditor() {
             <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
           </button>
           
-          <button
-            type="button"
-            onClick={() => handleSave('published')}
-            disabled={isSaving}
-            className="flex items-center space-x-2 px-4 py-2 bg-admin-accent text-white rounded-lg hover:bg-admin-accent-hover transition-colors disabled:opacity-50"
-          >
-            <Save size={20} />
-            <span>{isSaving ? 'Publishing...' : 'Publish'}</span>
-          </button>
+          {/* Show "Submit for Review" for writers, "Publish" and "Schedule" for others */}
+          {user?.role === 'writer' ? (
+            <button
+              type="button"
+              onClick={() => handleSave('pending')}
+              disabled={isSaving}
+              className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+            >
+              <Send size={20} />
+              <span>{isSaving ? 'Submitting...' : 'Submit for Review'}</span>
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => handleSave('published')}
+                disabled={isSaving}
+                className="flex items-center space-x-2 px-4 py-2 bg-admin-accent text-white rounded-lg hover:bg-admin-accent-hover transition-colors disabled:opacity-50"
+              >
+                <Save size={20} />
+                <span>{isSaving ? 'Publishing...' : 'Publish Now'}</span>
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleSchedule}
+                disabled={isSaving}
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+              >
+                <Clock size={20} />
+                <span>{isSaving ? 'Scheduling...' : 'Schedule'}</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -494,12 +607,13 @@ export default function ArticleEditor() {
             </label>
             <div className="space-y-4">
               {/* Media Type Selection */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {[
                   { value: 'image', label: 'Image', icon: '🖼️' },
                   { value: 'spotify', label: 'Spotify', icon: '🎵' },
                   { value: 'youtube', label: 'YouTube', icon: '📺' },
-                  { value: 'soundcloud', label: 'SoundCloud', icon: '🎧' }
+                  { value: 'soundcloud', label: 'SoundCloud', icon: '🎧' },
+                  { value: 'beatport', label: 'Beatport', icon: '🎚️' }
                 ].map((type) => (
                   <button
                     key={type.value}
@@ -598,7 +712,8 @@ export default function ArticleEditor() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {formData.mediaType === 'spotify' ? 'Spotify Track URL' :
                        formData.mediaType === 'youtube' ? 'YouTube Video URL' :
-                       'SoundCloud Track URL'}
+                       formData.mediaType === 'soundcloud' ? 'SoundCloud Track URL' :
+                       formData.mediaType === 'beatport' ? 'Beatport Track URL' : 'Media URL'}
                     </label>
                     <input
                       type="url"
@@ -607,7 +722,9 @@ export default function ArticleEditor() {
                       placeholder={
                         formData.mediaType === 'spotify' ? 'https://open.spotify.com/track/...' :
                         formData.mediaType === 'youtube' ? 'https://www.youtube.com/watch?v=...' :
-                        'https://soundcloud.com/artist/track-name'
+                        formData.mediaType === 'soundcloud' ? 'https://soundcloud.com/artist/track-name' :
+                        formData.mediaType === 'beatport' ? 'https://www.beatport.com/track/track-name/id' :
+                        'Enter media URL'
                       }
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-admin-accent focus:border-transparent"
                     />
@@ -650,12 +767,37 @@ export default function ArticleEditor() {
                             allow="autoplay" 
                             src={`https://w.soundcloud.com/player/?url=https://${formData.embeddedMedia.replace('https://', '').replace('http://', '')}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`}
                           />
+                        ) : formData.mediaType === 'beatport' && formData.embeddedMedia.includes('beatport.com') ? (
+                          (() => {
+                            const trackId = extractBeatportTrackId(formData.embeddedMedia);
+                            return trackId ? (
+                              <iframe 
+                                width="100%" 
+                                height="166" 
+                                scrolling="no" 
+                                frameBorder="no" 
+                                allow="autoplay" 
+                                src={`https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`}
+                              />
+                            ) : (
+                              <div className="text-center">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  🎚️ Invalid Beatport URL
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {formData.embeddedMedia}
+                                </p>
+                              </div>
+                            );
+                          })()
                         ) : (
                           <div className="text-center">
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                               {formData.mediaType === 'spotify' ? '🎵 Spotify track will be embedded here' :
                                formData.mediaType === 'youtube' ? '📺 YouTube video will be embedded here' :
-                               '🎧 SoundCloud track will be embedded here'}
+                               formData.mediaType === 'soundcloud' ? '🎧 SoundCloud track will be embedded here' :
+                               formData.mediaType === 'beatport' ? '🎚️ Beatport track will be embedded here' :
+                               'Media will be embedded here'}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {formData.embeddedMedia}
@@ -669,7 +811,9 @@ export default function ArticleEditor() {
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {formData.mediaType === 'spotify' ? 'Paste a Spotify track URL (e.g., https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh)' :
                      formData.mediaType === 'youtube' ? 'Paste a YouTube video URL (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)' :
-                     'Paste a SoundCloud track URL (e.g., https://soundcloud.com/artist/track-name)'}
+                     formData.mediaType === 'soundcloud' ? 'Paste a SoundCloud track URL (e.g., https://soundcloud.com/artist/track-name)' :
+                     formData.mediaType === 'beatport' ? 'Paste a Beatport track URL (e.g., https://www.beatport.com/track/track-name/12345678)' :
+                     'Paste a media URL'}
                   </p>
                 </div>
               )}
@@ -796,25 +940,37 @@ export default function ArticleEditor() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Author <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formData.author}
-                  onChange={(e) => handleInputChange('author', e.target.value)}
-                  disabled={usersLoading}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-admin-accent focus:border-transparent disabled:opacity-50"
-                >
-                  <option value="">
-                    {usersLoading ? 'Loading authors...' : 'Select Author'}
-                  </option>
-                  {users.length > 0 ? (
-                    users.map((user: any) => (
-                      <option key={user.id} value={user.id}>{user.name}</option>
-                    ))
-                  ) : (
-                    !usersLoading && (
-                      <option value="" disabled>No authors available</option>
-                    )
-                  )}
-                </select>
+                {user?.role === 'admin' ? (
+                  <select
+                    value={formData.author}
+                    onChange={(e) => handleInputChange('author', e.target.value)}
+                    disabled={usersLoading}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-admin-accent focus:border-transparent disabled:opacity-50"
+                  >
+                    <option value="">
+                      {usersLoading ? 'Loading authors...' : 'Select Author'}
+                    </option>
+                    {users.length > 0 ? (
+                      users.map((user: any) => (
+                        <option key={user.id} value={user.id}>{user.name}</option>
+                      ))
+                    ) : (
+                      !usersLoading && (
+                        <option value="" disabled>No authors available</option>
+                      )
+                    )}
+                  </select>
+                ) : (
+                  <div className="flex items-center space-x-3 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
+                    <div className="w-8 h-8 bg-admin-accent rounded-full flex items-center justify-center text-white text-sm font-medium">
+                      {user?.name?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">You will be the author of this article</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

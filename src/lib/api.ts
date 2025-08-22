@@ -244,6 +244,10 @@ export class ArticlesService {
     return apiClient.post(`/articles/${id}/unpublish`);
   }
 
+  static async scheduleArticle(id: string | number, publishDate: string) {
+    return apiClient.post(`/articles/${id}/schedule`, { publish_date: publishDate });
+  }
+
   static async toggleFeatured(id: string | number) {
     return apiClient.post(`/articles/${id}/feature`);
   }
@@ -309,6 +313,10 @@ export class UsersService {
     return apiClient.get<{ users: any[]; pagination: any }>('/users', params);
   }
 
+  static async getAuthors() {
+    return apiClient.get<{ users: any[] }>('/users/authors');
+  }
+
   static async getUser(id: string | number) {
     return apiClient.get<any>(`/users/${id}`);
   }
@@ -327,6 +335,10 @@ export class UsersService {
 
   static async updateUserStatus(id: string | number, status: 'active' | 'inactive') {
     return apiClient.put(`/users/${id}/status`, { status });
+  }
+
+  static async inviteUser(userData: { name: string; email: string; role?: string }) {
+    return apiClient.post<any>('/users/invite', userData);
   }
 
   static async getUserArticles(id: string | number, params?: {
@@ -397,6 +409,44 @@ export class NewsletterService {
 
   static async unsubscribe(email: string) {
     return apiClient.post('/newsletter/unsubscribe', { email });
+  }
+}
+
+export class SubscribersService {
+  static async subscribe(email: string, name?: string) {
+    return apiClient.post<any>('/subscribers/subscribe', { email, name });
+  }
+
+  static async unsubscribe(email: string) {
+    return apiClient.post<any>('/subscribers/unsubscribe', { email });
+  }
+
+  static async getSubscribers(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+  }) {
+    return apiClient.get<any>('/subscribers', params);
+  }
+
+  static async getSubscriberStats() {
+    return apiClient.get<any>('/subscribers/stats');
+  }
+
+  static async deleteSubscriber(id: string | number) {
+    return apiClient.delete<any>(`/subscribers/${id}`);
+  }
+
+  static async sendNewsletterCampaign(subject: string, content: string) {
+    return apiClient.post<any>('/subscribers/send-campaign', { subject, content });
+  }
+
+  static async getNewsletterCampaigns(params?: {
+    page?: number;
+    limit?: number;
+  }) {
+    return apiClient.get<any>('/subscribers/campaigns', params);
   }
 }
 

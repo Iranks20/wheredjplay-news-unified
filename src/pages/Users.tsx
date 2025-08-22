@@ -8,24 +8,33 @@ import {
   MoreVertical, 
   Edit, 
   Trash2, 
-  User,
-  Mail,
-  Calendar,
-  Shield,
-  FileText,
+  UserPlus,
   Eye,
   EyeOff,
+  Calendar,
+  User,
+  Shield,
+  Mail,
+  FileText,
   UserX,
   UserCheck
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useApiWithPagination } from '../hooks/useApi';
+import { useApi, useApiWithPagination } from '../hooks/useApi';
 import { UsersService } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { InviteUserModal } from '../components';
 
 export default function Users() {
   const { data: usersData, loading, error, execute, pagination } = useApiWithPagination();
-  
+  const { user: currentUser } = useAuth();
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const [filters, setFilters] = useState({
     role: '',
     status: '',
@@ -33,11 +42,6 @@ export default function Users() {
     page: 1,
     limit: 10
   });
-
-  const [showFilters, setShowFilters] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState<number | null>(null);
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     execute(() => UsersService.getUsers(filters));
@@ -121,6 +125,8 @@ export default function Users() {
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'author':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'writer':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
@@ -204,13 +210,25 @@ export default function Users() {
             Manage your team members and their permissions
           </p>
         </div>
-        <Link
-          to="/admin/users/new"
-          className="flex items-center space-x-2 bg-admin-accent text-white px-4 py-2 rounded-lg hover:bg-admin-accent-hover transition-colors"
-        >
-          <Plus size={16} />
-          <span>New User</span>
-        </Link>
+        <div className="flex items-center space-x-3">
+          {/* Only show invite button for editors and admins */}
+          {(currentUser?.role === 'editor' || currentUser?.role === 'admin') && (
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <UserPlus size={16} />
+              <span>Invite User</span>
+            </button>
+          )}
+          <Link
+            to="/admin/users/new"
+            className="flex items-center space-x-2 bg-admin-accent text-white px-4 py-2 rounded-lg hover:bg-admin-accent-hover transition-colors"
+          >
+            <Plus size={16} />
+            <span>New User</span>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -257,6 +275,7 @@ export default function Users() {
                 <option value="admin">Admin</option>
                 <option value="editor">Editor</option>
                 <option value="author">Author</option>
+                <option value="writer">Writer</option>
               </select>
             </div>
 
@@ -471,6 +490,16 @@ export default function Users() {
           </div>
         )}
       </div>
+
+      {/* Invite User Modal */}
+      <InviteUserModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onSuccess={() => {
+          execute(() => UsersService.getUsers(filters));
+          setShowInviteModal(false);
+        }}
+      />
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

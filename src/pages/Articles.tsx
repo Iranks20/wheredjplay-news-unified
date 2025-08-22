@@ -16,20 +16,24 @@ import {
   StarOff,
   FileText,
   Zap,
-  Clock
+  Clock,
+  CheckCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApi, useApiWithPagination } from '../hooks/useApi';
 import { ArticlesService, CategoriesService, UsersService } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath } from '../utils/mediaUtils';
+import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath, extractBeatportTrackId } from '../utils/mediaUtils';
 
 export default function Articles() {
   const { data: articlesData, loading, error, execute, pagination } = useApiWithPagination();
   const { data: categories, execute: fetchCategories } = useApi();
-  const { data: authors, execute: fetchAuthors } = useApi();
+  const { data: allAuthors, execute: fetchAuthors } = useApi();
   const { isAuthenticated, token, user } = useAuth();
+  
+  // Local state for authors (either all authors for admin or just current user)
+  const [authors, setAuthors] = useState<any[]>([]);
   
   const [filters, setFilters] = useState({
     status: 'all',
@@ -116,6 +120,34 @@ export default function Articles() {
           );
         }
         
+        case 'beatport': {
+          const trackId = extractBeatportTrackId(article.embedded_media);
+          console.log('🔍 Articles Admin Beatport - embedded_media:', article.embedded_media, 'trackId:', trackId);
+          if (!trackId) return null;
+          const iframeSrc = `https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+          console.log('🔍 Articles Admin Beatport - iframeSrc:', iframeSrc);
+          return (
+            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="80" 
+                scrolling="no" 
+                frameBorder="no" 
+                allow="autoplay" 
+                src={iframeSrc}
+                className="w-full h-full"
+                onError={(e) => {
+                  console.error('Beatport iframe failed to load:', iframeSrc);
+                  console.error('Error event:', e);
+                }}
+                onLoad={() => {
+                  console.log('Beatport iframe loaded successfully:', iframeSrc);
+                }}
+              />
+            </div>
+          );
+        }
+        
         default:
           return null;
       }
@@ -177,8 +209,21 @@ export default function Articles() {
     
     testApiConnection();
     fetchCategories(() => CategoriesService.getCategories());
-    fetchAuthors(() => UsersService.getUsers({ role: 'author' }));
+    // Only fetch all authors if user is admin, otherwise use current user
+    if (user?.role === 'admin') {
+      fetchAuthors(() => UsersService.getAuthors());
+    } else {
+      // For non-admin users, set themselves as the only author option
+      setAuthors([user]);
+    }
   }, [fetchCategories, fetchAuthors, isAuthenticated, token, user]);
+
+  // Update authors when allAuthors data changes (for admin users)
+  useEffect(() => {
+    if (user?.role === 'admin' && allAuthors?.users) {
+      setAuthors(allAuthors.users);
+    }
+  }, [allAuthors, user?.role]);
 
   useEffect(() => {
     execute(() => ArticlesService.getArticles(filters));
@@ -222,6 +267,11 @@ export default function Articles() {
         const response = await ArticlesService.unpublishArticle(articleId);
         console.log('Unpublish response:', response);
         toast.success(response.message || 'Article unpublished successfully');
+      } else if (newStatus === 'pending') {
+        // For pending status, we need to update the article directly
+        const response = await ArticlesService.updateArticle(articleId, { status: 'pending' });
+        console.log('Pending response:', response);
+        toast.success(response.message || 'Article submitted for review');
       }
       
       // Refresh the articles list
@@ -312,10 +362,28 @@ export default function Articles() {
       case 'draft':
         return 'bg-admin-warning text-white';
       case 'pending':
-        return 'bg-admin-error text-white';
+        return 'bg-orange-500 text-white';
+      case 'scheduled':
+        return 'bg-purple-500 text-white';
       default:
         return 'bg-gray-500 text-white';
     }
+  };
+
+  // Check if article is scheduled (has future publish_date)
+  const isArticleScheduled = (article: any) => {
+    if (!article.publish_date) return false;
+    const publishDate = new Date(article.publish_date);
+    const now = new Date();
+    return publishDate > now && article.status === 'draft';
+  };
+
+  // Get display status for article
+  const getArticleDisplayStatus = (article: any) => {
+    if (isArticleScheduled(article)) {
+      return 'scheduled';
+    }
+    return article.status;
   };
 
   const formatDate = (dateString: string) => {
@@ -374,6 +442,14 @@ export default function Articles() {
   }
 
   const articles = articlesData?.articles || [];
+  
+  // Debug logging for pagination
+  console.log('Articles page debug:', {
+    articlesData,
+    articles: articles.length,
+    pagination,
+    total: pagination?.total
+  });
 
   return (
     <div className="space-y-6">
@@ -473,7 +549,7 @@ export default function Articles() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-admin-accent focus:border-transparent"
               >
                 <option value="">All Authors</option>
-                {authors?.users?.map((author: any) => (
+                {authors?.map((author: any) => (
                   <option key={author.id} value={author.id}>
                     {author.name}
                   </option>
@@ -556,9 +632,9 @@ export default function Articles() {
 
                       {/* Status and Actions */}
                       <div className="flex items-center space-x-2 ml-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(article.status)}`}>
-                          {article.status}
-                        </span>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(getArticleDisplayStatus(article))}`}>
+                  {getArticleDisplayStatus(article)}
+                </span>
                         
                         {article.featured && (
                           <Star size={16} className="text-yellow-500" />
@@ -628,14 +704,48 @@ export default function Articles() {
                               
                               <button
                                 onClick={() => {
-                                  handleStatusChange(article.id, article.status === 'draft' ? 'published' : 'draft');
+                                  const displayStatus = getArticleDisplayStatus(article);
+                                  if (displayStatus === 'scheduled') {
+                                    // For scheduled articles, show a message
+                                    toast.info('This article is scheduled for future publication');
+                                  } else {
+                                    handleStatusChange(article.id, article.status === 'draft' ? 'published' : 'draft');
+                                  }
                                   closeDropdown();
                                 }}
                                 className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
-                                {article.status === 'draft' ? <Eye size={14} /> : <EyeOff size={14} />}
-                                <span>{article.status === 'draft' ? 'Publish' : 'Unpublish'}</span>
+                                {getArticleDisplayStatus(article) === 'scheduled' ? (
+                                  <>
+                                    <Clock size={14} />
+                                    <span>Scheduled</span>
+                                  </>
+                                ) : article.status === 'draft' ? (
+                                  <>
+                                    <Eye size={14} />
+                                    <span>Publish</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <EyeOff size={14} />
+                                    <span>Unpublish</span>
+                                  </>
+                                )}
                               </button>
+                              
+                              {/* Show Approve button for pending articles */}
+                              {article.status === 'pending' && (
+                                <button
+                                  onClick={() => {
+                                    handleStatusChange(article.id, 'published');
+                                    closeDropdown();
+                                  }}
+                                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                >
+                                  <CheckCircle size={14} />
+                                  <span>Approve & Publish</span>
+                                </button>
+                              )}
                               
                               <button
                                 onClick={() => {

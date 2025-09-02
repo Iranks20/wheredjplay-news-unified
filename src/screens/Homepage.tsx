@@ -48,6 +48,10 @@ export default function Homepage() {
       limit: 20,
       ...(category && { category })
     };
+    
+    console.log('🔍 Homepage - Category:', category);
+    console.log('🔍 Homepage - API Params:', params);
+    
     execute(() => ArticlesService.getArticles(params));
 
     // Fetch breaking news and latest headlines only on homepage
@@ -70,6 +74,13 @@ export default function Homepage() {
     });
   };
 
+  // Get category name for display
+  const getCategoryDisplayName = (categorySlug: string) => {
+    const category = categoriesList.find((cat: any) => cat.slug === categorySlug);
+    return category ? category.name : categorySlug.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  // Get category color
   const getCategoryColor = (categorySlug: string) => {
     const category = categoriesList.find((cat: any) => cat.slug === categorySlug);
     return category?.color || '#09afdf';
@@ -262,12 +273,20 @@ export default function Homepage() {
         {category && (
           <section className="mb-8">
             <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-wdp-text mb-4 capitalize">
-                {category.replace('-', ' ')} News
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-wdp-text mb-4">
+                {getCategoryDisplayName(category)}
               </h1>
               <p className="text-xl text-gray-600 dark:text-wdp-text/80 max-w-2xl mx-auto">
-                Latest updates and stories from the {category.replace('-', ' ')} scene
+                Latest updates and stories from the {getCategoryDisplayName(category)} scene
               </p>
+              <div className="mt-4">
+                <span 
+                  className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                  style={{ backgroundColor: getCategoryColor(category), color: 'white' }}
+                >
+                  {articles.length} Articles
+                </span>
+              </div>
             </div>
           </section>
         )}
@@ -279,7 +298,7 @@ export default function Homepage() {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-wdp-text">
-                  {category ? `${category.replace('-', ' ').toUpperCase()} NEWS` : 'Featured Story'}
+                  {category ? `${category.replace('-', ' ').toUpperCase()}` : 'Featured Story'}
                 </h1>
                 <div className="flex items-center space-x-2 text-wdp-accent">
                   <Zap size={20} />
@@ -428,7 +447,7 @@ export default function Homepage() {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-wdp-text">
-                  {category ? `More ${category.replace('-', ' ').toUpperCase()} NEWS` : 'Latest News'}
+                  {category ? `MORE ${category.replace('-', ' ').toUpperCase()} NEWS` : 'Latest News'}
                 </h2>
                 <button className="text-wdp-accent hover:text-wdp-accent-hover font-semibold transition-colors">
                   View All
@@ -458,13 +477,28 @@ export default function Homepage() {
                   <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                     <FileText size={24} className="text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No articles found</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    {category 
+                      ? `No articles found in ${getCategoryDisplayName(category)}`
+                      : 'No articles published yet.'
+                    }
+                  </h3>
                   <p className="text-gray-500 dark:text-gray-400">
                     {category 
-                      ? `No articles in the ${category.replace('-', ' ')} category yet.`
+                      ? `No articles have been published in the ${getCategoryDisplayName(category)} category yet.`
                       : 'No articles published yet.'
                     }
                   </p>
+                  {category && (
+                    <div className="mt-4">
+                      <a
+                        href="/"
+                        className="inline-flex items-center px-4 py-2 bg-wdp-accent text-white rounded-lg hover:bg-wdp-accent-hover transition-colors"
+                      >
+                        View All Articles
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
             </section>

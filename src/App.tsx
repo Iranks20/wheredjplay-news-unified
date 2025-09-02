@@ -5,6 +5,29 @@ import * as Screens from './screens';
 import * as Pages from './pages';
 import { AuthProvider } from './contexts/AuthContext';
 
+// 404 Page Component
+function NotFoundPage() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-wdp-background flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-6xl font-bold text-wdp-accent mb-4">404</div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-wdp-text mb-4">
+          Page Not Found
+        </h1>
+        <p className="text-gray-600 dark:text-wdp-text/80 mb-8 max-w-md">
+          The page you're looking for doesn't exist or has been moved.
+        </p>
+        <a
+          href="/"
+          className="inline-flex items-center px-6 py-3 bg-wdp-accent text-white rounded-lg font-semibold hover:bg-wdp-accent-hover transition-colors"
+        >
+          Go to Homepage
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   // Initialize theme from localStorage
   useEffect(() => {
@@ -42,8 +65,8 @@ function App() {
               </Route>
             </Route>
             
-            {/* Catch all route - redirect to homepage */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* 404 Route - Must be last */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>
       </Router>

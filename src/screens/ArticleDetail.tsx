@@ -22,7 +22,7 @@ import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPat
 
 export default function ArticleDetail() {
   const { slug } = useParams();
-  const { data: article, loading, error, execute } = useApi();
+  const { data: articleData, loading, error, execute } = useApi();
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -31,6 +31,10 @@ export default function ArticleDetail() {
       execute(() => ArticlesService.getArticle(slug));
     }
   }, [execute, slug]);
+
+  // Extract article and related articles from API response
+  const article = articleData?.article || articleData;
+  const relatedArticles = articleData?.relatedArticles || [];
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -41,30 +45,6 @@ export default function ArticleDetail() {
   };
 
   // Static data for sections without APIs
-  const relatedArticles = [
-    {
-      id: '2',
-      title: 'Pioneer Unveils Next-Gen CDJ-4000: AI-Powered Beat Matching and Holographic Displays',
-      image: getAssetPath('images/articles/46_JC6vzus.jpg'),
-      category: 'Gear & Tech',
-      publishedAt: '4 hours ago'
-    },
-    {
-      id: '3',
-      title: 'Tomorrowland 2024: Record-Breaking Attendance and Groundbreaking Stage Designs',
-      image: getAssetPath('images/articles/img_0002.jpg'),
-      category: 'Event Reports',
-      publishedAt: '6 hours ago'
-    },
-    {
-      id: '4',
-      title: 'Deadmau5 Signs Major Deal with Universal Music Group',
-      image: getAssetPath('images/articles/38_d9az1XP.jpg'),
-      category: 'Artist News',
-      publishedAt: '8 hours ago'
-    }
-  ];
-
   const mostPopularArticles = [
     {
       id: '5',
@@ -85,6 +65,119 @@ export default function ArticleDetail() {
       publishedAt: '6 hours ago'
     }
   ];
+
+  // Function to render embedded media for related articles
+  const renderRelatedArticleMedia = (related: any) => {
+    // Priority: embedded media over image
+    if (related.embedded_media && related.media_type !== 'image') {
+      switch (related.media_type) {
+        case 'spotify': {
+          const trackId = extractSpotifyTrackId(related.embedded_media);
+          if (!trackId) return null;
+          return (
+            <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                style={{borderRadius: '12px'}} 
+                src={`https://open.spotify.com/embed/track/${trackId}`}
+                width="100%" 
+                height="152" 
+                frameBorder="0" 
+                allowFullScreen 
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                loading="lazy"
+                className="w-full h-full"
+              />
+            </div>
+          );
+        }
+        
+        case 'youtube': {
+          const videoId = extractYouTubeVideoId(related.embedded_media);
+          if (!videoId) return null;
+          return (
+            <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="200" 
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title="YouTube video player" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          );
+        }
+        
+        case 'soundcloud': {
+          const trackPath = extractSoundCloudTrackPath(related.embedded_media);
+          if (!trackPath) return null;
+          const iframeSrc = `https://w.soundcloud.com/player/?url=https://${trackPath}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&buying=false&liking=false&download=false&sharing=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+          return (
+            <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="166" 
+                scrolling="no" 
+                frameBorder="no" 
+                allow="autoplay" 
+                src={iframeSrc}
+                className="w-full h-full"
+              />
+            </div>
+          );
+        }
+        
+        case 'beatport': {
+          const trackId = extractBeatportTrackId(related.embedded_media);
+          if (!trackId) return null;
+          const iframeSrc = `https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
+          return (
+            <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <iframe 
+                width="100%" 
+                height="166" 
+                scrolling="no" 
+                frameBorder="no" 
+                allow="autoplay" 
+                src={iframeSrc}
+                className="w-full h-full"
+              />
+            </div>
+          );
+        }
+        
+        default:
+          return null;
+      }
+    }
+
+    // Fallback to image if no embedded media
+    if (related.media_type === 'image' && related.image) {
+      return (
+        <img 
+          src={ImageUploadService.getImageUrl(related.image)} 
+          alt={related.title}
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = getAssetPath('images/articles/default-article.jpg');
+          }}
+        />
+      );
+    }
+
+    // Fallback to placeholder if no media
+    return (
+      <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          <div className="text-4xl mb-2">🎵</div>
+          <p className="text-sm">Media Preview</p>
+        </div>
+      </div>
+    );
+  };
 
   // Function to render media content for article detail
   const renderArticleDetailMedia = (article: any) => {
@@ -383,26 +476,28 @@ export default function ArticleDetail() {
             {/* Related Articles */}
             <div className="mt-12">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-wdp-text mb-6">Related Articles</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {relatedArticles.map((related) => (
-                  <Link key={related.id} to={`/article/${related.id}`} className="group">
-                    <div className="bg-white dark:bg-wdp-surface rounded-xl overflow-hidden border border-gray-200 dark:border-wdp-muted hover:border-wdp-accent transition-colors">
-                      <img 
-                        src={related.image} 
-                        alt={related.title}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="p-4">
-                        <span className="text-wdp-accent text-sm font-semibold">{related.category}</span>
-                        <h4 className="text-gray-900 dark:text-wdp-text font-semibold mt-2 line-clamp-2 group-hover:text-wdp-accent transition-colors">
-                          {related.title}
-                        </h4>
-                        <p className="text-gray-600 dark:text-wdp-text/60 text-sm mt-2">{related.publishedAt}</p>
+              {relatedArticles.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {relatedArticles.map((related) => (
+                    <Link key={related.id} to={`/article/${related.slug || related.id}`} className="group">
+                      <div className="bg-white dark:bg-wdp-surface rounded-xl overflow-hidden border border-gray-200 dark:border-wdp-muted hover:border-wdp-accent transition-colors">
+                        {renderRelatedArticleMedia(related)}
+                        <div className="p-4">
+                          <span className="text-wdp-accent text-sm font-semibold">{related.category_name}</span>
+                          <h4 className="text-gray-900 dark:text-wdp-text font-semibold mt-2 line-clamp-2 group-hover:text-wdp-accent transition-colors">
+                            {related.title}
+                          </h4>
+                          <p className="text-gray-600 dark:text-wdp-text/60 text-sm mt-2">{related.publishedAt}</p>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400">No related articles found.</p>
+                </div>
+              )}
             </div>
           </div>
 

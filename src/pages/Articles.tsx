@@ -182,16 +182,16 @@ export default function Articles() {
         console.log('Testing API connection...');
         
         // Test health endpoint
-        const healthResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/health`);
+        const healthResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/health`);
         console.log('API health check response:', healthResponse.status, healthResponse.ok);
         
         // Test articles endpoint without auth
-        const articlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`);
+        const articlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/api/v1/articles`);
         console.log('Articles endpoint response:', articlesResponse.status, articlesResponse.ok);
         
         // Test articles endpoint with auth
         if (token) {
-          const authArticlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`, {
+          const authArticlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/api/v1/articles`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'

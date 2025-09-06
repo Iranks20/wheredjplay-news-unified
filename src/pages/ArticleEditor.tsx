@@ -411,7 +411,8 @@ export default function ArticleEditor() {
   useEffect(() => {
     if (isEditing && id) {
       ArticlesService.getArticle(id).then(response => {
-        const article = response.data || response;
+        // Handle new API response structure where article data is nested under data.article
+        const article = response.data?.article || response.data || response;
         
         setFormData({
           title: article.title || '',

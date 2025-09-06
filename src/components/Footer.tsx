@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { getAssetPath } from '../lib/utils'
+import { Link } from 'react-router-dom'
 
 export default function Footer() {
   const [currentTheme, setCurrentTheme] = useState('dark')
@@ -76,9 +77,9 @@ export default function Footer() {
         {/* Center: Navigation Links */}
         <div className="flex-1 min-w-[180px] flex flex-col gap-2">
           <h4 className="font-semibold text-gray-900 dark:text-wdp-text mb-2">Navigation</h4>
-          <a href="/" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">News</a>
-          <a href="/category/artist-news" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">Artists</a>
-          <a href="/category/event-reports" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">Events</a>
+          <Link to="/" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">News</Link>
+          <Link to="/category/artist-news" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">Artists</Link>
+          <Link to="/category/event-reports" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">Events</Link>
           <a href="https://djlink.me" target="_blank" rel="noopener noreferrer" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">DJLink.me</a>
         </div>
 

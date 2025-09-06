@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { 
   Plus, 
   Search, 
@@ -47,6 +47,7 @@ export default function Articles() {
   const [showFilters, setShowFilters] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isInitializedRef = useRef(false);
 
   // Function to render media content for admin articles list
   const renderArticleMedia = (article: any) => {
@@ -173,6 +174,14 @@ export default function Articles() {
   };
 
   useEffect(() => {
+    // Only run this effect once when component mounts or when authentication state changes
+    if (!isAuthenticated || !token || isInitializedRef.current) {
+      return;
+    }
+    
+    // Mark as initialized to prevent multiple runs
+    isInitializedRef.current = true;
+    
     // Debug authentication state
     console.log('Auth state:', { isAuthenticated, token: token ? 'present' : 'missing', user });
     
@@ -216,7 +225,7 @@ export default function Articles() {
       // For non-admin users, set themselves as the only author option
       setAuthors([user]);
     }
-  }, [fetchCategories, fetchAuthors, isAuthenticated, token, user]);
+  }, [isAuthenticated, token]); // Only depend on authentication state, not user object
 
   // Update authors when allAuthors data changes (for admin users)
   useEffect(() => {
@@ -225,9 +234,14 @@ export default function Articles() {
     }
   }, [allAuthors, user?.role]);
 
+  // Memoize the API call to prevent infinite loops
+  const fetchArticles = useCallback(() => {
+    return ArticlesService.getArticles(filters);
+  }, [filters]);
+
   useEffect(() => {
-    execute(() => ArticlesService.getArticles(filters));
-  }, [execute, filters]);
+    execute(fetchArticles);
+  }, [execute, fetchArticles]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

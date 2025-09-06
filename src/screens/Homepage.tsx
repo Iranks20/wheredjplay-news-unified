@@ -39,6 +39,9 @@ export default function Homepage() {
   const { data: latestHeadlinesData, loading: latestHeadlinesLoading, execute: fetchLatestHeadlines } = useApi();
 
   useEffect(() => {
+    console.log('🔍 Homepage - useEffect triggered');
+    console.log('🔍 Homepage - Current category:', category);
+    
     // Fetch categories
     fetchCategories(() => CategoriesService.getCategories());
     
@@ -56,8 +59,11 @@ export default function Homepage() {
 
     // Fetch breaking news and latest headlines only on homepage
     if (!category) {
+      console.log('🔍 Homepage - Fetching breaking news and latest headlines');
       fetchBreakingNews(() => ArticlesService.getBreakingNews(6));
       fetchLatestHeadlines(() => ArticlesService.getLatestHeadlines(8));
+    } else {
+      console.log('🔍 Homepage - Category page, skipping breaking news and latest headlines');
     }
   }, [execute, fetchCategories, fetchBreakingNews, fetchLatestHeadlines, category]);
 
@@ -570,28 +576,28 @@ export default function Homepage() {
             {!category && categoriesList.length > 0 && (
               <section className="mb-12">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-wdp-text mb-6">Browse by Category</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {categoriesList.map((cat: any) => (
-                    <a
-                      key={cat.id}
-                      href={`/category/${cat.slug}`}
-                      className="group p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-wdp-accent/50 transition-colors"
-                    >
-                      <div className="text-center">
-                        <div 
-                          className="w-8 h-8 rounded-full mx-auto mb-2"
-                          style={{ backgroundColor: cat.color }}
-                        ></div>
-                        <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-wdp-accent transition-colors">
-                          {cat.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {cat.article_count || 0} articles
-                        </p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
+                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {categoriesList.map((cat: any) => (
+                      <Link
+                        key={cat.id}
+                        to={`/category/${cat.slug}`}
+                        className="group p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-wdp-accent/50 transition-colors"
+                      >
+                        <div className="text-center">
+                          <div 
+                            className="w-8 h-8 rounded-full mx-auto mb-2"
+                            style={{ backgroundColor: cat.color }}
+                          ></div>
+                          <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-wdp-accent transition-colors">
+                            {cat.name}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {cat.article_count || 0} articles
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
               </section>
             )}
           </div>
@@ -619,24 +625,24 @@ export default function Homepage() {
             <div className="bg-white dark:bg-wdp-surface rounded-xl p-6 shadow-md border border-gray-200 dark:border-wdp-muted">
               <h3 className="text-lg font-bold text-gray-900 dark:text-wdp-text mb-4">News Categories</h3>
               <div className="space-y-3">
-                <a href="/category/artist-news" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
+                <Link to="/category/artist-news" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
                   Artist News
-                </a>
-                <a href="/category/event-reports" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
+                </Link>
+                <Link to="/category/event-reports" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
                   Event Reports
-                </a>
-                <a href="/category/gear-tech" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
+                </Link>
+                <Link to="/category/gear-tech" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
                   Gear & Tech
-                </a>
-                <a href="/category/trending-tracks" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
+                </Link>
+                <Link to="/category/trending-tracks" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
                   Trending Tracks
-                </a>
-                <a href="/category/industry-news" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
+                </Link>
+                <Link to="/category/industry-news" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
                   Industry News
-                </a>
-                <a href="/category/education-news" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
+                </Link>
+                <Link to="/category/education-news" className="block text-gray-700 dark:text-wdp-text hover:text-wdp-accent transition-colors">
                   Education News
-                </a>
+                </Link>
               </div>
             </div>
 

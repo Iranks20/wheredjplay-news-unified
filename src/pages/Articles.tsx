@@ -470,12 +470,124 @@ export default function Articles() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Articles</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Articles {pagination && `(${pagination.total})`}
+          </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage your news articles and content
           </p>
         </div>
         <div className="flex items-center space-x-4">
+          {/* Pagination at top */}
+          <div className="flex items-center space-x-1">
+            {loading ? (
+              /* Loading state */
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-admin-accent rounded-full animate-spin"></div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Loading...</span>
+              </div>
+            ) : pagination && pagination.pages >= 1 ? (
+              /* Pagination controls */
+              <>
+                {/* Previous Button */}
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1 || pagination.pages === 1}
+                  className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center space-x-1">
+                  {/* Show page numbers only if there are multiple pages */}
+                  {pagination.pages > 1 ? (
+                    <>
+                      {/* First page */}
+                      {pagination.page > 3 && (
+                        <>
+                          <button
+                            onClick={() => handlePageChange(1)}
+                            className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            1
+                          </button>
+                          {pagination.page > 4 && (
+                            <span className="px-2 text-gray-500 dark:text-gray-400">...</span>
+                          )}
+                        </>
+                      )}
+
+                      {/* Pages around current page */}
+                      {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                        let pageNum;
+                        if (pagination.pages <= 5) {
+                          pageNum = i + 1;
+                        } else if (pagination.page <= 3) {
+                          pageNum = i + 1;
+                        } else if (pagination.page >= pagination.pages - 2) {
+                          pageNum = pagination.pages - 4 + i;
+                        } else {
+                          pageNum = pagination.page - 2 + i;
+                        }
+
+                        if (pageNum < 1 || pageNum > pagination.pages) return null;
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`px-3 py-2 text-sm border rounded-lg transition-colors ${
+                              pageNum === pagination.page
+                                ? 'bg-admin-accent text-white border-admin-accent'
+                                : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+
+                      {/* Last page */}
+                      {pagination.page < pagination.pages - 2 && (
+                        <>
+                          {pagination.page < pagination.pages - 3 && (
+                            <span className="px-2 text-gray-500 dark:text-gray-400">...</span>
+                          )}
+                          <button
+                            onClick={() => handlePageChange(pagination.pages)}
+                            className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            {pagination.pages}
+                          </button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    /* Single page indicator */
+                    <span className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                      Page 1 of 1
+                    </span>
+                  )}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.pages || pagination.pages === 1}
+                  className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </>
+            ) : (
+              /* No data state */
+              <span className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                No articles
+              </span>
+            )}
+          </div>
+          
           <Link
             to="/admin/articles/new"
             className="flex items-center space-x-2 bg-admin-accent text-white px-4 py-2 rounded-lg hover:bg-admin-accent-hover transition-colors"
@@ -805,35 +917,6 @@ export default function Articles() {
           )}
         </div>
 
-        {/* Pagination */}
-        {pagination && pagination.pages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} articles
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1}
-                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
-                  Page {pagination.page} of {pagination.pages}
-                </span>
-                <button
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.pages}
-                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

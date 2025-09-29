@@ -39,19 +39,9 @@ export default function Subscribers() {
   }, [filters, execute]);
 
   const loadSubscribers = () => {
-    console.log('Loading subscribers with filters:', filters);
     execute(() => SubscribersService.getSubscribers(filters));
   };
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Subscribers data:', subscribers);
-    console.log('Subscribers loading:', loading);
-    console.log('Subscribers error:', error);
-    console.log('Subscribers length:', subscribers?.length);
-    console.log('Subscribers type:', typeof subscribers);
-    console.log('Subscribers is array:', Array.isArray(subscribers));
-  }, [subscribers, loading, error]);
 
   const loadStats = async () => {
     try {
@@ -228,8 +218,6 @@ export default function Subscribers() {
           </div>
         </div>
       </div>
-
-
 
       {/* Subscribers Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">

@@ -24,10 +24,12 @@ import DJLinkAd from '../components/DJLinkAd';
 import NewsletterModal from '../components/NewsletterModal';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import ScrollBanner from '../components/ScrollBanner';
 import { getAssetPath } from '../lib/utils';
 import { ImageUploadService } from '../lib/uploadService';
 import { extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath, extractBeatportTrackId } from '../utils/mediaUtils';
 import NewsletterSubscription from '../components/NewsletterSubscription';
+import SEOHead from '../components/SEOHead';
 
 export default function Homepage() {
   const { category } = useParams();
@@ -39,8 +41,6 @@ export default function Homepage() {
   const { data: latestHeadlinesData, loading: latestHeadlinesLoading, execute: fetchLatestHeadlines } = useApi();
 
   useEffect(() => {
-    console.log('🔍 Homepage - useEffect triggered');
-    console.log('🔍 Homepage - Current category:', category);
     
     // Fetch categories
     fetchCategories(() => CategoriesService.getCategories());
@@ -52,18 +52,14 @@ export default function Homepage() {
       ...(category && { category })
     };
     
-    console.log('🔍 Homepage - Category:', category);
-    console.log('🔍 Homepage - API Params:', params);
     
     execute(() => ArticlesService.getArticles(params));
 
     // Fetch breaking news and latest headlines only on homepage
     if (!category) {
-      console.log('🔍 Homepage - Fetching breaking news and latest headlines');
       fetchBreakingNews(() => ArticlesService.getBreakingNews(6));
       fetchLatestHeadlines(() => ArticlesService.getLatestHeadlines(8));
     } else {
-      console.log('🔍 Homepage - Category page, skipping breaking news and latest headlines');
     }
   }, [execute, fetchCategories, fetchBreakingNews, fetchLatestHeadlines, category]);
 
@@ -156,10 +152,8 @@ export default function Homepage() {
         
         case 'soundcloud': {
           const trackPath = extractSoundCloudTrackPath(article.embedded_media);
-          console.log('🔍 Homepage SoundCloud - embedded_media:', article.embedded_media, 'trackPath:', trackPath);
           if (!trackPath) return null;
           const iframeSrc = `https://w.soundcloud.com/player/?url=https://${trackPath}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&buying=false&liking=false&download=false&sharing=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
-          console.log('🔍 Homepage SoundCloud - iframeSrc:', iframeSrc);
           return (
             <div className="w-full h-40 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               <iframe 
@@ -174,9 +168,6 @@ export default function Homepage() {
                   console.error('SoundCloud iframe failed to load:', iframeSrc);
                   console.error('Error event:', e);
                 }}
-                onLoad={() => {
-                  console.log('SoundCloud iframe loaded successfully:', iframeSrc);
-                }}
               />
             </div>
           );
@@ -184,10 +175,8 @@ export default function Homepage() {
         
         case 'beatport': {
           const trackId = extractBeatportTrackId(article.embedded_media);
-          console.log('🔍 Homepage Beatport - embedded_media:', article.embedded_media, 'trackId:', trackId);
           if (!trackId) return null;
           const iframeSrc = `https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
-          console.log('🔍 Homepage Beatport - iframeSrc:', iframeSrc);
           return (
             <div className="w-full h-40 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               <iframe 
@@ -201,9 +190,6 @@ export default function Homepage() {
                 onError={(e) => {
                   console.error('Beatport iframe failed to load:', iframeSrc);
                   console.error('Error event:', e);
-                }}
-                onLoad={() => {
-                  console.log('Beatport iframe loaded successfully:', iframeSrc);
                 }}
               />
             </div>
@@ -249,6 +235,7 @@ export default function Homepage() {
   if (loading && !articlesData) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
+        <ScrollBanner />
         <Header />
 
         <main className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
@@ -270,32 +257,21 @@ export default function Homepage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
+      <SEOHead 
+        title={category ? `${getCategoryDisplayName(category)} - WhereDJsPlay` : 'WhereDJsPlay - Electronic Music News'}
+        description={category ? `Latest ${getCategoryDisplayName(category).toLowerCase()} news and updates from WhereDJsPlay` : 'Latest electronic music news, artist interviews, and industry updates'}
+        keywords={`electronic music, DJ, ${category || 'news'}, techno, house, EDM, music news`}
+        url={category ? `/category/${category}` : '/'}
+        type="website"
+      />
+      {/* Scroll-triggered Banner - Above Header */}
+      <ScrollBanner />
+      
       {/* Header */}
       <Header />
 
       {/* Main Content */}
-      <main className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
-        {/* Category Header */}
-        {category && (
-          <section className="mb-8">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-wdp-text mb-4">
-                {getCategoryDisplayName(category)}
-              </h1>
-              <p className="text-xl text-gray-600 dark:text-wdp-text/80 max-w-2xl mx-auto">
-                Latest updates and stories from the {getCategoryDisplayName(category)} scene
-              </p>
-              <div className="mt-4">
-                <span 
-                  className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
-                  style={{ backgroundColor: getCategoryColor(category), color: 'white' }}
-                >
-                  {articles.length} Articles
-                </span>
-              </div>
-            </div>
-          </section>
-        )}
+      <main className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-8" style={{ paddingBottom: '200px' }}>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}

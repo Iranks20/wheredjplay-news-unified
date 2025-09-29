@@ -10,7 +10,8 @@ import {
   Palette,
   Bell,
   Database,
-  Save
+  Save,
+  Mail
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -40,6 +41,10 @@ export default function Settings() {
     siteUrl: 'https://wheredjsplay.com',
     contactEmail: 'admin@wheredjsplay.com',
     newsletterEnabled: true,
+    newsletterAutomationEnabled: true,
+    newsletterAutomationCategories: 'all',
+    newsletterAutomationExcludeFeatured: false,
+    newsletterAutomationExcludeBreaking: false,
     darkModeEnabled: true,
     autoSaveEnabled: true,
     maxUploadSize: '10MB',
@@ -66,6 +71,7 @@ export default function Settings() {
     { id: 'general', name: 'General', icon: SettingsIcon },
     { id: 'appearance', name: 'Appearance', icon: Palette },
     { id: 'notifications', name: 'Notifications', icon: Bell },
+    { id: 'newsletter', name: 'Newsletter', icon: Mail },
     { id: 'media', name: 'Media', icon: Database },
     { id: 'security', name: 'Security', icon: Shield },
     { id: 'integrations', name: 'Integrations', icon: Globe }
@@ -302,6 +308,114 @@ export default function Settings() {
                     <button className="text-admin-accent hover:text-admin-accent-hover text-sm font-medium">
                       Create Backup
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'newsletter' && (
+              <div className="p-6 space-y-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Newsletter Settings</h2>
+                
+                <div className="space-y-6">
+                  {/* Newsletter Automation */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">Automated Newsletter</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Enable Automation</h4>
+                          <p className="text-sm text-blue-700 dark:text-blue-300">Automatically send newsletter notifications when articles are published</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={settings.newsletterAutomationEnabled}
+                            onChange={(e) => handleSettingChange('newsletterAutomationEnabled', e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+
+                      {settings.newsletterAutomationEnabled && (
+                        <div className="space-y-4 pl-4 border-l-2 border-blue-200 dark:border-blue-700">
+                          <div>
+                            <label className="block text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                              Categories to Include
+                            </label>
+                            <select
+                              value={settings.newsletterAutomationCategories}
+                              onChange={(e) => handleSettingChange('newsletterAutomationCategories', e.target.value)}
+                              className="w-full px-3 py-2 border border-blue-200 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-800 text-blue-900 dark:text-blue-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                              <option value="all">All Categories</option>
+                              <option value="featured">Featured Articles Only</option>
+                              <option value="breaking">Breaking News Only</option>
+                              <option value="custom">Custom Selection</option>
+                            </select>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Exclude Featured Articles</h4>
+                                <p className="text-sm text-blue-700 dark:text-blue-300">Don't send newsletters for featured articles</p>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={settings.newsletterAutomationExcludeFeatured}
+                                  onChange={(e) => handleSettingChange('newsletterAutomationExcludeFeatured', e.target.checked)}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                              </label>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Exclude Breaking News</h4>
+                                <p className="text-sm text-blue-700 dark:text-blue-300">Don't send newsletters for breaking news articles</p>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={settings.newsletterAutomationExcludeBreaking}
+                                  onChange={(e) => handleSettingChange('newsletterAutomationExcludeBreaking', e.target.checked)}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Newsletter Status */}
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Newsletter Status</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">Newsletter System</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Enable newsletter subscription and management</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={settings.newsletterEnabled}
+                            onChange={(e) => handleSettingChange('newsletterEnabled', e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-admin-accent/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-admin-accent"></div>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

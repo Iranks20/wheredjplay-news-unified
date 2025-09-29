@@ -13,7 +13,10 @@ import {
   Globe,
   Tag,
   Send,
-  Clock
+  Clock,
+  Mail,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react'
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -42,7 +45,8 @@ export default function ArticleEditor() {
     tags: '',
     seoTitle: '',
     seoDescription: '',
-    publishDate: ''
+    publishDate: '',
+    sendNewsletter: true
   })
 
   const [isSaving, setIsSaving] = useState(false)
@@ -189,6 +193,14 @@ export default function ArticleEditor() {
       
       if (response.error) {
         throw new Error(response.message || 'Failed to save article');
+      }
+      
+      // Show newsletter result if available
+      if (response.newsletter && status === 'published') {
+        const newsletterMsg = response.newsletter.sent 
+          ? `Newsletter sent to ${response.newsletter.sentCount} subscribers`
+          : 'Newsletter not sent (automation disabled or no subscribers)';
+
       }
       
       setUploadSuccess(true);
@@ -525,6 +537,39 @@ export default function ArticleEditor() {
         </div>
       </div>
 
+      {/* Newsletter Automation Toggle */}
+      {user?.role !== 'writer' && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div>
+                <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Newsletter Automation
+                </h3>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Automatically send newsletter notification to subscribers when this article is published
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleInputChange('sendNewsletter', !formData.sendNewsletter)}
+              className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+            >
+              {formData.sendNewsletter ? (
+                <ToggleRight className="h-6 w-6" />
+              ) : (
+                <ToggleLeft className="h-6 w-6" />
+              )}
+              <span className="text-sm font-medium">
+                {formData.sendNewsletter ? 'Enabled' : 'Disabled'}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Error Display */}
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -646,7 +691,7 @@ export default function ArticleEditor() {
                           e.currentTarget.src = 'https://via.placeholder.com/800x400/e5e7eb/6b7280?text=Image+Not+Found';
                         }}
                         onLoad={() => {
-                          console.log('Image loaded successfully:', imagePreview || formData.image);
+
                         }}
                       />
                       <button
@@ -986,7 +1031,6 @@ export default function ArticleEditor() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-admin-accent focus:border-transparent"
                 />
               </div>
-
 
             </div>
           </div>

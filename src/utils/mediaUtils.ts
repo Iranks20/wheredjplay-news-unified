@@ -50,9 +50,7 @@ export function extractYouTubeVideoId(url: string): string | null {
  */
 export function extractSoundCloudTrackPath(url: string): string | null {
   if (!url) return null;
-  
-  console.log('🔍 SoundCloud extraction - Input URL:', url);
-  
+
   // Handle various SoundCloud URL formats
   const patterns = [
     /soundcloud\.com\/([^\/\?]+)\/([^\/\?]+)/,  // artist/track format like "forss/flickermood"
@@ -63,7 +61,7 @@ export function extractSoundCloudTrackPath(url: string): string | null {
     const match = url.match(pattern);
     if (match) {
       const result = match[0].replace('https://', '').replace('http://', '');
-      console.log('🔍 SoundCloud extraction - Match found:', match[0], 'Result:', result);
+
       return result;
     }
   }
@@ -73,14 +71,13 @@ export function extractSoundCloudTrackPath(url: string): string | null {
     const urlObj = new URL(url);
     if (urlObj.hostname.includes('soundcloud.com')) {
       const path = urlObj.pathname;
-      console.log('🔍 SoundCloud extraction - Using URL path:', path);
+
       return path.substring(1); // Remove leading slash
     }
   } catch (error) {
-    console.log('🔍 SoundCloud extraction - URL parsing failed:', error);
+
   }
-  
-  console.log('🔍 SoundCloud extraction - No match found for URL:', url);
+
   return null;
 }
 
@@ -89,9 +86,7 @@ export function extractSoundCloudTrackPath(url: string): string | null {
  */
 export function extractBeatportTrackId(url: string): string | null {
   if (!url) return null;
-  
-  console.log('🔍 Beatport extraction - Input URL:', url);
-  
+
   // Handle various Beatport URL formats
   const patterns = [
     /beatport\.com\/track\/([^\/\?]+)\/(\d+)/,  // track-name/id format
@@ -103,7 +98,7 @@ export function extractBeatportTrackId(url: string): string | null {
     const match = url.match(pattern);
     if (match) {
       const trackId = match[match.length - 1]; // Get the last match (track ID)
-      console.log('🔍 Beatport extraction - Match found:', match[0], 'Track ID:', trackId);
+
       return trackId;
     }
   }
@@ -116,15 +111,14 @@ export function extractBeatportTrackId(url: string): string | null {
       const trackIndex = pathParts.findIndex(part => part === 'track');
       if (trackIndex !== -1 && pathParts[trackIndex + 1]) {
         const trackId = pathParts[trackIndex + 1];
-        console.log('🔍 Beatport extraction - Using URL path, Track ID:', trackId);
+
         return trackId;
       }
     }
   } catch (error) {
-    console.log('🔍 Beatport extraction - URL parsing failed:', error);
+
   }
-  
-  console.log('🔍 Beatport extraction - No match found for URL:', url);
+
   return null;
 }
 

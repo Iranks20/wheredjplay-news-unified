@@ -1,51 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { getAssetPath } from '../lib/utils'
 import { Link } from 'react-router-dom'
+import { UserPlus } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 export default function Footer() {
-  const [currentTheme, setCurrentTheme] = useState('dark')
-
-  // Get current theme from localStorage or default to dark
-  const getCurrentTheme = () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'dark'
-    }
-    return 'dark'
-  }
-
-  // Listen for theme changes
-  useEffect(() => {
-    const updateTheme = () => {
-      setCurrentTheme(getCurrentTheme())
-    }
-
-    // Set initial theme
-    updateTheme()
-
-    // Listen for storage changes (when theme is changed in header)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'theme') {
-        updateTheme()
-      }
-    }
-
-    // Listen for custom theme change event
-    const handleThemeChange = () => {
-      updateTheme()
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('themeChanged', handleThemeChange)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('themeChanged', handleThemeChange)
-    }
-  }, [])
+  const { resolvedTheme } = useTheme()
 
   // Get the appropriate logo based on theme
   const getLogoPath = () => {
-    return currentTheme === 'dark'
+    return resolvedTheme === 'dark'
       ? getAssetPath('images/logos/wheredjsplay_logo.PNG')
       : getAssetPath('images/logos/wheredjsplay_light_mode.png')
   }
@@ -80,7 +44,20 @@ export default function Footer() {
           <Link to="/" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">News</Link>
           <Link to="/category/artist-news" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">Artists</Link>
           <Link to="/category/event-reports" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">Events</Link>
+          <Link to="/about" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">About Us</Link>
+          <Link to="/contact" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">Contact</Link>
           <a href="https://djlink.me" target="_blank" rel="noopener noreferrer" className="text-gray-700 dark:text-wdp-text hover:text-wdp-accent text-sm">DJLink.me</a>
+          
+          {/* Join Team Button */}
+          <div className="mt-4">
+            <Link
+              to="/admin"
+              className="inline-flex items-center space-x-2 bg-wdp-accent text-white px-4 py-2 rounded-lg hover:bg-wdp-accent-hover transition-all duration-200 font-medium shadow-md hover:shadow-lg text-sm"
+            >
+              <UserPlus size={16} />
+              <span>Join Team</span>
+            </Link>
+          </div>
         </div>
 
         {/* Right: Social & Legal */}

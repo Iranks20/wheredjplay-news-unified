@@ -117,7 +117,7 @@ export default function DJLinkAd({ format = 'sidebar', className = '' }: DJLinkA
         </h3>
         
         <p className="text-gray-600 dark:text-wdp-text/80 text-sm mb-4">
-          The ultimate platform for DJs to showcase their skills and connect with the industry.
+          Find out more about DJLink.me a new platform helping Djs to get Booked.
         </p>
         
         <div className="space-y-2 mb-4 text-xs text-gray-500 dark:text-wdp-text/60">

@@ -75,14 +75,12 @@ export default function Users() {
 
   const handleStatusChange = async (userId: number, newStatus: 'active' | 'inactive') => {
     try {
-      console.log('Changing user status:', userId, 'to', newStatus);
-      
+
       const response = await UsersService.updateUserStatus(userId, newStatus);
-      console.log('Update user status response:', response);
-      
+
       // Refresh the users list
       await execute(() => UsersService.getUsers(filters));
-      console.log('Users refreshed successfully');
+
       toast.success('User status updated successfully');
     } catch (error) {
       console.error('Error updating user status:', error);
@@ -92,14 +90,12 @@ export default function Users() {
 
   const handleDelete = async (userId: number) => {
     try {
-      console.log('Deleting user:', userId);
-      
+
       const response = await UsersService.deleteUser(userId);
-      console.log('Delete user response:', response);
-      
+
       // Refresh the users list
       await execute(() => UsersService.getUsers(filters));
-      console.log('Users refreshed successfully');
+
       toast.success('User deleted successfully');
       setShowDeleteModal(null);
     } catch (error: any) {

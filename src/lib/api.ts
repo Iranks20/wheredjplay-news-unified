@@ -1,6 +1,6 @@
 // API Configuration
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001',
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3
 };
@@ -457,6 +457,41 @@ export class SettingsService {
 
   static async updateSettings(settings: Record<string, any>) {
     return apiClient.put('/settings', settings);
+  }
+}
+
+export class ShortLinksService {
+  static async generateShortLink(articleId: number, utmParams?: {
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_term?: string;
+    utm_content?: string;
+  }) {
+    return apiClient.post<any>('/short-links/generate', {
+      article_id: articleId,
+      ...utmParams
+    });
+  }
+
+  static async getArticleAnalytics(articleId: number, period: number = 30) {
+    return apiClient.get<any>(`/short-links/analytics/${articleId}`, { period });
+  }
+
+  static async getDashboardAnalytics(period: number = 30) {
+    return apiClient.get<any>('/short-links/dashboard', { period });
+  }
+
+  static async getDetailedClicks(params?: {
+    period?: number;
+    page?: number;
+    limit?: number;
+  }) {
+    return apiClient.get<any>('/short-links/detailed-clicks', params);
+  }
+
+  static async getArticleShortLinks(articleId: number) {
+    return apiClient.get<any>(`/short-links/article/${articleId}`);
   }
 }
 

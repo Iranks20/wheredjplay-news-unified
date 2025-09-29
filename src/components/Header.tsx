@@ -1,29 +1,16 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Menu, X, Sun, Moon, Plus, Search, User, ExternalLink } from 'lucide-react'
+import { Menu, X, Sun, Moon, Search, User, ExternalLink, Monitor } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { getAssetPath } from '../lib/utils'
+import { useTheme } from '../contexts/ThemeContext'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isDarkMode, setIsDarkMode] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const location = useLocation()
-
-  // Initialize theme from localStorage or system preference
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme')
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    
-    if (savedTheme === 'light' || (!savedTheme && !systemPrefersDark)) {
-      setIsDarkMode(false)
-      document.documentElement.classList.remove('dark')
-    } else {
-      setIsDarkMode(true)
-      document.documentElement.classList.add('dark')
-    }
-  }, [])
+  const { theme, resolvedTheme, toggleTheme } = useTheme()
 
   // Handle scroll effect
   useEffect(() => {
@@ -40,22 +27,6 @@ export default function Header() {
   }, [location.pathname])
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
-  
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode
-    setIsDarkMode(newDarkMode)
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
-    }
-
-    // Dispatch custom event for other components to listen to
-    window.dispatchEvent(new CustomEvent('themeChanged'))
-  }
 
   const navigationItems = [
     { name: 'Latest News', href: '/', current: location.pathname === '/' },
@@ -63,14 +34,30 @@ export default function Header() {
     { name: 'Event Reports', href: '/category/event-reports', current: location.pathname === '/category/event-reports' },
     { name: 'Gear & Tech', href: '/category/gear-tech', current: location.pathname === '/category/gear-tech' },
     { name: 'Trending Tracks', href: '/category/trending-tracks', current: location.pathname === '/category/trending-tracks' },
-    { name: 'Industry', href: '/category/industry-news', current: location.pathname === '/category/industry-news' }
+    { name: 'Industry', href: '/category/industry-news', current: location.pathname === '/category/industry-news' },
+    { name: 'About', href: '/about', current: location.pathname === '/about' },
+    { name: 'Contact', href: '/contact', current: location.pathname === '/contact' }
   ]
 
   // Get the appropriate logo based on theme
   const getLogoPath = () => {
-    return isDarkMode 
+    return resolvedTheme === 'dark' 
       ? getAssetPath('images/logos/wheredjsplay_logo.PNG')
       : getAssetPath('images/logos/wheredjsplay_light_mode.png')
+  }
+
+  // Get theme icon
+  const getThemeIcon = () => {
+    switch (theme) {
+      case 'light':
+        return <Sun size={20} />
+      case 'dark':
+        return <Moon size={20} />
+      case 'system':
+        return <Monitor size={20} />
+      default:
+        return <Sun size={20} />
+    }
   }
 
   return (
@@ -78,10 +65,10 @@ export default function Header() {
       <header className={`bg-white/95 dark:bg-wdp-surface/95 backdrop-blur-md border-b border-gray-200 dark:border-wdp-muted sticky top-0 z-50 transition-all duration-300 ${
         isScrolled ? 'shadow-lg' : ''
       }`}>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
           <div className="flex justify-between items-center h-16 lg:h-20">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 group">
+            {/* Logo - Far Left */}
+            <Link to="/" className="flex items-center space-x-2 group flex-shrink-0">
               <img 
                 src={getLogoPath()} 
                 alt="WhereDJsPlay" 
@@ -89,92 +76,48 @@ export default function Header() {
               />
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden xl:flex items-center space-x-1">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 whitespace-nowrap ${
-                    item.current
-                      ? 'bg-wdp-accent text-white shadow-md'
-                      : 'text-gray-700 dark:text-wdp-text hover:text-wdp-accent hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Tablet Navigation - Compact */}
-            <nav className="hidden lg:flex xl:hidden items-center space-x-1">
-              {navigationItems.slice(0, 3).map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`px-2 py-2 rounded-lg font-medium transition-all duration-200 text-sm whitespace-nowrap ${
-                    item.current
-                      ? 'bg-wdp-accent text-white shadow-md'
-                      : 'text-gray-700 dark:text-wdp-text hover:text-wdp-accent hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-              {/* Dropdown for remaining items */}
-              <div className="relative group">
-                <button className="px-2 py-2 rounded-lg font-medium transition-all duration-200 text-sm text-gray-700 dark:text-wdp-text hover:text-wdp-accent hover:bg-gray-100 dark:hover:bg-gray-800 whitespace-nowrap">
-                  More
-                </button>
-                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 min-w-[120px] z-50">
-                  {navigationItems.slice(3).map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`block px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                        item.current
-                          ? 'bg-wdp-accent text-white'
-                          : 'text-gray-700 dark:text-wdp-text hover:text-wdp-accent hover:bg-gray-100 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
+            {/* Desktop Navigation - Responsive */}
+            <nav className="hidden lg:flex items-center justify-center flex-1 mx-4 xl:mx-8 2xl:mx-12">
+              <div className="flex items-center space-x-1 xl:space-x-2">
+                {navigationItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`px-2 xl:px-3 2xl:px-4 py-2 rounded-lg font-medium transition-all duration-200 whitespace-nowrap text-xs xl:text-sm ${
+                      item.current
+                        ? 'bg-wdp-accent text-white shadow-md'
+                        : 'text-gray-700 dark:text-wdp-text hover:text-wdp-accent hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
               </div>
             </nav>
 
-            {/* Right Side Actions */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Right Side Actions - Far Right */}
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
               {/* Search Button - Mobile */}
               <button className="lg:hidden p-2 text-gray-500 dark:text-wdp-text hover:text-wdp-accent transition-colors">
                 <Search size={20} />
               </button>
 
-              {/* Dark Mode Toggle */}
+              {/* Theme Toggle */}
               <button
-                onClick={toggleDarkMode}
+                onClick={toggleTheme}
                 className="p-2 text-gray-500 dark:text-wdp-text hover:text-wdp-accent hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
-                aria-label="Toggle dark mode"
+                aria-label={`Current theme: ${theme}. Click to cycle through themes.`}
+                title={`Current: ${theme} (${resolvedTheme})`}
               >
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                {getThemeIcon()}
               </button>
-
-              {/* Post News Button - Desktop */}
-              <Link
-                to="/admin"
-                className="hidden sm:flex items-center space-x-2 bg-wdp-accent text-white px-3 py-2 rounded-lg hover:bg-wdp-accent-hover transition-all duration-200 font-medium shadow-md hover:shadow-lg"
-              >
-                <Plus size={16} />
-                <span>Post News</span>
-              </Link>
 
               {/* DJLink.me Button - Desktop */}
               <a
                 href="https://djlink.me/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:flex items-center space-x-2 bg-gray-800 dark:bg-gray-700 text-white px-3 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                className="hidden sm:flex items-center space-x-2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-200 font-medium shadow-md hover:shadow-lg whitespace-nowrap"
               >
                 <span>Join DJLink.me</span>
                 <ExternalLink size={14} />
@@ -253,13 +196,6 @@ export default function Header() {
 
               {/* Action Buttons */}
               <div className="p-6 border-t border-gray-200 dark:border-gray-700 space-y-3">
-                <Link
-                  to="/admin"
-                  className="flex items-center justify-center space-x-2 bg-wdp-accent text-white px-4 py-3 rounded-lg hover:bg-wdp-accent-hover transition-all duration-200 font-medium shadow-md"
-                >
-                  <Plus size={16} />
-                  <span>Post News</span>
-                </Link>
                 <a
                   href="https://djlink.me/"
                   target="_blank"

@@ -1,9 +1,11 @@
 'use client'
 
+import React, { memo } from 'react'
 import { Clock, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ImageUploadService } from '../lib/uploadService'
 import { generateEmbedHtml, extractSpotifyTrackId, extractYouTubeVideoId, extractSoundCloudTrackPath, extractBeatportTrackId } from '../utils/mediaUtils'
+import LazyImage from './LazyImage'
 
 interface NewsCardProps {
   id: string
@@ -20,7 +22,7 @@ interface NewsCardProps {
   className?: string
 }
 
-export default function NewsCard({
+const NewsCard = memo(function NewsCard({
   id,
   title,
   excerpt,
@@ -49,10 +51,6 @@ export default function NewsCard({
 
   // Get the proper image URL using the ImageUploadService
   const imageUrl = ImageUploadService.getImageUrlWithFallback(image);
-
-  // Debug logging
-  console.log('NewsCard - Original image:', image);
-  console.log('NewsCard - Processed imageUrl:', imageUrl);
 
   // Function to render media content with priority for embedded media
   const renderMedia = () => {
@@ -100,10 +98,8 @@ export default function NewsCard({
         
         case 'soundcloud': {
           const trackPath = extractSoundCloudTrackPath(embeddedMedia);
-          console.log('🔍 NewsCard SoundCloud - embeddedMedia:', embeddedMedia, 'trackPath:', trackPath);
           if (!trackPath) return null;
           const iframeSrc = `https://w.soundcloud.com/player/?url=https://${trackPath}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&buying=false&liking=false&download=false&sharing=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
-          console.log('🔍 NewsCard SoundCloud - iframeSrc:', iframeSrc);
           return (
             <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               <iframe 
@@ -114,13 +110,6 @@ export default function NewsCard({
                 allow="autoplay" 
                 src={iframeSrc}
                 className="w-full h-full"
-                onError={(e) => {
-                  console.error('SoundCloud iframe failed to load:', iframeSrc);
-                  console.error('Error event:', e);
-                }}
-                onLoad={() => {
-                  console.log('SoundCloud iframe loaded successfully:', iframeSrc);
-                }}
               />
             </div>
           );
@@ -128,10 +117,8 @@ export default function NewsCard({
         
         case 'beatport': {
           const trackId = extractBeatportTrackId(embeddedMedia);
-          console.log('🔍 NewsCard Beatport - embeddedMedia:', embeddedMedia, 'trackId:', trackId);
           if (!trackId) return null;
           const iframeSrc = `https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
-          console.log('🔍 NewsCard Beatport - iframeSrc:', iframeSrc);
           return (
             <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               <iframe 
@@ -142,13 +129,6 @@ export default function NewsCard({
                 allow="autoplay" 
                 src={iframeSrc}
                 className="w-full h-full"
-                onError={(e) => {
-                  console.error('Beatport iframe failed to load:', iframeSrc);
-                  console.error('Error event:', e);
-                }}
-                onLoad={() => {
-                  console.log('Beatport iframe loaded successfully:', iframeSrc);
-                }}
               />
             </div>
           );
@@ -162,19 +142,12 @@ export default function NewsCard({
     // Fallback to image if no embedded media
     if (mediaType === 'image' && image) {
       return (
-        <img
-          src={imageUrl}
+        <LazyImage
+          src={image}
           alt={title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => {
-            console.error('Image failed to load:', image);
-            console.error('Image URL:', imageUrl);
-            console.error('Error event:', e);
-            e.currentTarget.src = 'https://via.placeholder.com/800x400/e5e7eb/6b7280?text=Image+Not+Found';
-          }}
-          onLoad={() => {
-            console.log('Image loaded successfully:', imageUrl);
-          }}
+          className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+          sizes={featured ? '(max-width: 768px) 100vw, 50vw' : '(max-width: 768px) 50vw, 33vw'}
+          priority={featured}
         />
       );
     }
@@ -190,20 +163,6 @@ export default function NewsCard({
     );
   };
 
-  // Test image accessibility (only in development)
-  if (import.meta.env.DEV) {
-    // Test the image URL manually
-    fetch(imageUrl, { method: 'HEAD' })
-      .then(response => {
-        console.log('🔍 Image accessibility test:', imageUrl, 'Status:', response.status, 'OK:', response.ok);
-        if (!response.ok) {
-          console.error('❌ Image not accessible:', imageUrl, 'Status:', response.status);
-        }
-      })
-      .catch(error => {
-        console.error('❌ Image accessibility test failed:', imageUrl, error);
-      });
-  }
 
   if (featured) {
     return (
@@ -277,4 +236,6 @@ export default function NewsCard({
       </article>
     </Link>
   )
-}
+})
+
+export default NewsCard

@@ -8,3 +8,5 @@ export { default as Users } from './Users';
 export { default as UserEditor } from './UserEditor';
 export { default as Settings } from './Settings';
 export { default as Subscribers } from './Subscribers';
+export { default as About } from './About';
+export { default as Contact } from './Contact';

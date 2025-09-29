@@ -41,14 +41,12 @@ export default function Categories() {
 
   const handleDelete = async (categoryId: number) => {
     try {
-      console.log('Deleting category:', categoryId);
-      
+
       const response = await CategoriesService.deleteCategory(categoryId);
-      console.log('Delete category response:', response);
-      
+
       // Refresh the categories list
       await execute(() => CategoriesService.getCategories());
-      console.log('Categories refreshed successfully');
+
       toast.success('Category deleted successfully');
       setShowDeleteModal(null);
     } catch (error: any) {

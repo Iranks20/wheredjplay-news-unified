@@ -95,10 +95,10 @@ export default function Articles() {
         
         case 'soundcloud': {
           const trackPath = extractSoundCloudTrackPath(article.embedded_media);
-          console.log('🔍 Articles Admin SoundCloud - embedded_media:', article.embedded_media, 'trackPath:', trackPath);
+
           if (!trackPath) return null;
           const iframeSrc = `https://w.soundcloud.com/player/?url=https://${trackPath}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&buying=false&liking=false&download=false&sharing=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
-          console.log('🔍 Articles Admin SoundCloud - iframeSrc:', iframeSrc);
+
           return (
             <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               <iframe 
@@ -114,7 +114,7 @@ export default function Articles() {
                   console.error('Error event:', e);
                 }}
                 onLoad={() => {
-                  console.log('SoundCloud iframe loaded successfully:', iframeSrc);
+
                 }}
               />
             </div>
@@ -123,10 +123,10 @@ export default function Articles() {
         
         case 'beatport': {
           const trackId = extractBeatportTrackId(article.embedded_media);
-          console.log('🔍 Articles Admin Beatport - embedded_media:', article.embedded_media, 'trackId:', trackId);
+
           if (!trackId) return null;
           const iframeSrc = `https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
-          console.log('🔍 Articles Admin Beatport - iframeSrc:', iframeSrc);
+
           return (
             <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               <iframe 
@@ -142,7 +142,7 @@ export default function Articles() {
                   console.error('Error event:', e);
                 }}
                 onLoad={() => {
-                  console.log('Beatport iframe loaded successfully:', iframeSrc);
+
                 }}
               />
             </div>
@@ -181,34 +181,28 @@ export default function Articles() {
     
     // Mark as initialized to prevent multiple runs
     isInitializedRef.current = true;
-    
-    // Debug authentication state
-    console.log('Auth state:', { isAuthenticated, token: token ? 'present' : 'missing', user });
-    
+
     // Test API connectivity
     const testApiConnection = async () => {
       try {
-        console.log('Testing API connection...');
         
         // Test health endpoint
-        const healthResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/health`);
-        console.log('API health check response:', healthResponse.status, healthResponse.ok);
-        
+        const healthResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/health`);
+
         // Test articles endpoint without auth
-        const articlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/api/v1/articles`);
-        console.log('Articles endpoint response:', articlesResponse.status, articlesResponse.ok);
-        
+        const articlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`);
+
         // Test articles endpoint with auth
         if (token) {
-          const authArticlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://13.60.95.22:3001'}/api/v1/articles`, {
+          const authArticlesResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/articles`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });
-          console.log('Authenticated articles response:', authArticlesResponse.status, authArticlesResponse.ok);
+
         } else {
-          console.log('No auth token available');
+
         }
         
       } catch (error) {
@@ -271,26 +265,25 @@ export default function Articles() {
 
   const handleStatusChange = async (articleId: number, newStatus: string) => {
     try {
-      console.log('Changing article status:', articleId, 'to', newStatus);
-      
+
       if (newStatus === 'published') {
         const response = await ArticlesService.publishArticle(articleId);
-        console.log('Publish response:', response);
+
         toast.success(response.message || 'Article published successfully');
       } else if (newStatus === 'draft') {
         const response = await ArticlesService.unpublishArticle(articleId);
-        console.log('Unpublish response:', response);
+
         toast.success(response.message || 'Article unpublished successfully');
       } else if (newStatus === 'pending') {
         // For pending status, we need to update the article directly
         const response = await ArticlesService.updateArticle(articleId, { status: 'pending' });
-        console.log('Pending response:', response);
+
         toast.success(response.message || 'Article submitted for review');
       }
       
       // Refresh the articles list
       await execute(() => ArticlesService.getArticles(filters));
-      console.log('Articles refreshed successfully');
+
     } catch (error) {
       console.error('Error updating article status:', error);
       toast.error(`Error updating article status: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -299,15 +292,14 @@ export default function Articles() {
 
   const handleFeaturedToggle = async (articleId: number) => {
     try {
-      console.log('Toggling featured status for article:', articleId);
-      
+
       const response = await ArticlesService.toggleFeatured(articleId);
-      console.log('Toggle featured response:', response);
+
       toast.success(response.message || 'Featured status updated successfully');
       
       // Refresh the articles list
       await execute(() => ArticlesService.getArticles(filters));
-      console.log('Articles refreshed successfully');
+
     } catch (error) {
       console.error('Error toggling featured status:', error);
       toast.error(`Error toggling featured status: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -316,12 +308,12 @@ export default function Articles() {
 
   const handleBreakingNewsToggle = async (articleId: number) => {
     try {
-      console.log('Toggling breaking news status for article:', articleId);
+
       const response = await ArticlesService.toggleBreakingNews(articleId);
-      console.log('Toggle breaking news response:', response);
+
       toast.success(response.message || 'Breaking news status updated successfully');
       await execute(() => ArticlesService.getArticles(filters));
-      console.log('Articles refreshed successfully');
+
     } catch (error) {
       console.error('Error toggling breaking news status:', error);
       toast.error(`Error toggling breaking news status: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -330,12 +322,12 @@ export default function Articles() {
 
   const handleLatestHeadlineToggle = async (articleId: number) => {
     try {
-      console.log('Toggling latest headline status for article:', articleId);
+
       const response = await ArticlesService.toggleLatestHeadline(articleId);
-      console.log('Toggle latest headline response:', response);
+
       toast.success(response.message || 'Latest headline status updated successfully');
       await execute(() => ArticlesService.getArticles(filters));
-      console.log('Articles refreshed successfully');
+
     } catch (error) {
       console.error('Error toggling latest headline status:', error);
       toast.error(`Error toggling latest headline status: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -345,15 +337,14 @@ export default function Articles() {
   const handleDelete = async (articleId: number) => {
     if (window.confirm('Are you sure you want to delete this article?')) {
       try {
-        console.log('Deleting article:', articleId);
-        
+
         const response = await ArticlesService.deleteArticle(articleId);
-        console.log('Delete response:', response);
+
         toast.success(response.message || 'Article deleted successfully');
         
         // Refresh the articles list
         await execute(() => ArticlesService.getArticles(filters));
-        console.log('Articles refreshed successfully');
+
       } catch (error) {
         console.error('Error deleting article:', error);
         toast.error(`Error deleting article: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -458,12 +449,6 @@ export default function Articles() {
   const articles = articlesData?.articles || [];
   
   // Debug logging for pagination
-  console.log('Articles page debug:', {
-    articlesData,
-    articles: articles.length,
-    pagination,
-    total: pagination?.total
-  });
 
   return (
     <div className="space-y-6">

@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Share2, Facebook, Twitter, Instagram, Linkedin, Link as LinkIcon, Copy, X } from 'lucide-react'
+import { ShortLinksService } from '../lib/api'
 
 interface SocialShareProps {
   url?: string
@@ -9,20 +10,69 @@ interface SocialShareProps {
   description?: string
   image?: string
   className?: string
+  articleId?: number
+  articleSlug?: string
 }
 
 export default function SocialShare({ 
-  url = window.location.href, 
+  url, 
   title = 'Check out this article on WhereDJsPlay',
   description = 'The latest in electronic music news and DJ culture',
   image,
-  className = ''
+  className = '',
+  articleId,
+  articleSlug
 }: SocialShareProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [trackedUrl, setTrackedUrl] = useState<string | null>(null)
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false)
+
+  // Generate or fetch tracked short link
+  useEffect(() => {
+    const generateTrackedUrl = async () => {
+      if (!articleId) {
+        // Fallback to provided URL or current page URL
+        setTrackedUrl(url || window.location.href)
+        return
+      }
+
+      setIsLoadingUrl(true)
+      try {
+        // First try to get existing short links
+        const existingResponse = await ShortLinksService.getArticleShortLinks(articleId)
+        if (!existingResponse.error && existingResponse.data && existingResponse.data.length > 0) {
+          setTrackedUrl(existingResponse.data[0].short_link)
+        } else {
+          // Generate new short link with social sharing UTM parameters
+          const generateResponse = await ShortLinksService.generateShortLink(articleId, {
+            utm_source: 'social_share',
+            utm_medium: 'social',
+            utm_campaign: 'article_sharing'
+          })
+          if (!generateResponse.error) {
+            setTrackedUrl(generateResponse.data.short_link)
+          } else {
+            // Fallback to provided URL or current page URL
+            setTrackedUrl(url || window.location.href)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to get tracked URL:', error)
+        // Fallback to provided URL or current page URL
+        setTrackedUrl(url || window.location.href)
+      } finally {
+        setIsLoadingUrl(false)
+      }
+    }
+
+    generateTrackedUrl()
+  }, [articleId, url])
+
+  const currentUrl = trackedUrl || url || window.location.href
 
   const shareData = {
-    url: encodeURIComponent(url),
+    url: encodeURIComponent(currentUrl),
     title: encodeURIComponent(title),
     description: encodeURIComponent(description)
   }
@@ -70,7 +120,7 @@ export default function SocialShare({
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(currentUrl)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
@@ -84,7 +134,7 @@ export default function SocialShare({
         await navigator.share({
           title,
           text: description,
-          url
+          url: currentUrl
         })
       } catch (err) {
         console.error('Error sharing:', err)
@@ -149,7 +199,7 @@ export default function SocialShare({
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
-                  value={url}
+                  value={isLoadingUrl ? 'Loading tracked link...' : currentUrl}
                   readOnly
                   className="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
                 />

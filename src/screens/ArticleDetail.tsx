@@ -14,6 +14,7 @@ import {
   Clock
 } from 'lucide-react';
 import * as Components from '../components';
+import SEOHead from '../components/SEOHead';
 import { useApi } from '../hooks/useApi';
 import { ArticlesService } from '../lib/api';
 import { ImageUploadService } from '../lib/uploadService';
@@ -225,10 +226,8 @@ export default function ArticleDetail() {
         
         case 'soundcloud': {
           const trackPath = extractSoundCloudTrackPath(article.embedded_media);
-          console.log('🔍 ArticleDetail SoundCloud - embedded_media:', article.embedded_media, 'trackPath:', trackPath);
           if (!trackPath) return null;
           const iframeSrc = `https://w.soundcloud.com/player/?url=https://${trackPath}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&buying=false&liking=false&download=false&sharing=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
-          console.log('🔍 ArticleDetail SoundCloud - iframeSrc:', iframeSrc);
           return (
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
               <iframe 
@@ -239,13 +238,6 @@ export default function ArticleDetail() {
                 allow="autoplay" 
                 src={iframeSrc}
                 className="w-full"
-                onError={(e) => {
-                  console.error('SoundCloud iframe failed to load:', iframeSrc);
-                  console.error('Error event:', e);
-                }}
-                onLoad={() => {
-                  console.log('SoundCloud iframe loaded successfully:', iframeSrc);
-                }}
               />
             </div>
           );
@@ -253,10 +245,8 @@ export default function ArticleDetail() {
         
         case 'beatport': {
           const trackId = extractBeatportTrackId(article.embedded_media);
-          console.log('🔍 ArticleDetail Beatport - embedded_media:', article.embedded_media, 'trackId:', trackId);
           if (!trackId) return null;
           const iframeSrc = `https://embed.beatport.com/track/${trackId}?color=ff5500&bgcolor=000000&autoplay=false&show_artwork=true&show_playcount=true&show_user=true&hide_related=false&visual=true&start_track=0`;
-          console.log('🔍 ArticleDetail Beatport - iframeSrc:', iframeSrc);
           return (
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
               <iframe 
@@ -267,13 +257,6 @@ export default function ArticleDetail() {
                 allow="autoplay" 
                 src={iframeSrc}
                 className="w-full"
-                onError={(e) => {
-                  console.error('Beatport iframe failed to load:', iframeSrc);
-                  console.error('Error event:', e);
-                }}
-                onLoad={() => {
-                  console.log('Beatport iframe loaded successfully:', iframeSrc);
-                }}
               />
             </div>
           );
@@ -309,6 +292,7 @@ export default function ArticleDetail() {
   if (loading && !article) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
+        <Components.ScrollBanner />
         {/* Top Banner Ad for DJLink.me */}
         
 
@@ -333,6 +317,7 @@ export default function ArticleDetail() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
+        <Components.ScrollBanner />
         {/* Top Banner Ad for DJLink.me */}
         
 
@@ -363,6 +348,23 @@ export default function ArticleDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-wdp-background">
+      <SEOHead 
+        title={article?.seo_title || article?.title || 'Article - WhereDJsPlay'}
+        description={article?.seo_description || article?.excerpt || 'Read the latest electronic music news on WhereDJsPlay'}
+        keywords={article?.tags || 'electronic music, DJ, news'}
+        image={article?.image}
+        url={`/article/${article?.slug || slug}`}
+        type="article"
+        author={article?.author_name}
+        publishedTime={article?.published_at}
+        modifiedTime={article?.updated_at}
+        section={article?.category_name}
+        tags={article?.tags ? article.tags.split(',').map(tag => tag.trim()) : []}
+        canonical={`/article/${article?.slug || slug}`}
+      />
+      {/* Fixed Top Banner */}
+      <Components.ScrollBanner />
+      
       {/* Top Banner Ad for DJLink.me */}
       
 
@@ -370,7 +372,7 @@ export default function ArticleDetail() {
       <Components.Header />
 
       {/* Main Content */}
-      <div className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-8">
+      <div className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-8" style={{ paddingBottom: '200px' }}>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Article Content */}
           <div className="lg:col-span-3">
@@ -394,9 +396,11 @@ export default function ArticleDetail() {
                 <Components.SocialShare 
                   url={window.location.href}
                   title={article.title}
-                  description={article.excerpt || `Check out this article on WhereDJsPlay: ${article.title}`}
+                  description={article.slug}
                   image={ImageUploadService.getImageUrl(article.image)}
                   className="sm:hidden"
+                  articleId={article.id}
+                  articleSlug={article.slug}
                 />
               </div>
               
@@ -465,12 +469,22 @@ export default function ArticleDetail() {
                 </button>
               </div>
               
-              <Components.SocialShare 
-                url={window.location.href}
-                title={article.title}
-                description={article.excerpt || `Check out this article on WhereDJsPlay: ${article.title}`}
-                image={ImageUploadService.getImageUrl(article.image)}
-              />
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Components.SocialShare 
+                  url={window.location.href}
+                  title={article.title}
+                  description={article.slug}
+                  image={ImageUploadService.getImageUrl(article.image)}
+                  articleId={article.id}
+                  articleSlug={article.slug}
+                />
+                <Components.ShortLink 
+                  articleId={article.id}
+                  articleSlug={article.slug}
+                  articleTitle={article.title}
+                  variant="modal"
+                />
+              </div>
             </div>
 
             {/* Related Articles */}
@@ -505,6 +519,13 @@ export default function ArticleDetail() {
           <div className="lg:col-span-1 space-y-6">
             {/* Sticky DJLink.me Ad */}
             <Components.DJLinkAd />
+            
+            {/* Short Link */}
+            <Components.ShortLink 
+              articleId={article.id}
+              articleSlug={article.slug || article.id}
+              articleTitle={article.title}
+            />
 
             {/* Newsletter Signup */}
             <div className="bg-wdp-accent rounded-xl p-6 text-white">

@@ -14,43 +14,32 @@ import {
   Search,
   Sun,
   Moon,
+  Monitor,
   Plus,
   Mail
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { Toaster } from './ui/sonner';
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { theme, resolvedTheme, toggleTheme } = useTheme();
 
-  // Initialize theme from localStorage or system preference
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('admin-theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('admin-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('admin-theme', 'light');
+  // Get theme icon
+  const getThemeIcon = () => {
+    switch (theme) {
+      case 'light':
+        return <Sun size={20} />
+      case 'dark':
+        return <Moon size={20} />
+      case 'system':
+        return <Monitor size={20} />
+      default:
+        return <Sun size={20} />
     }
   };
 
@@ -178,12 +167,14 @@ export default function Layout() {
                 <span className="absolute top-1 right-1 w-2 h-2 bg-admin-error rounded-full"></span>
               </button>
 
-              {/* Dark Mode Toggle */}
+              {/* Theme Toggle */}
               <button
-                onClick={toggleDarkMode}
+                onClick={toggleTheme}
                 className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                aria-label={`Current theme: ${theme}. Click to cycle through themes.`}
+                title={`Current: ${theme} (${resolvedTheme})`}
               >
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                {getThemeIcon()}
               </button>
 
               {/* Quick Actions */}
